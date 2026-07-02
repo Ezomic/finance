@@ -74,6 +74,41 @@ class RecurringDetector
     }
 
     /**
+     * Flags recurring charges (same payee + account, ignoring amount) whose
+     * most recent occurrence costs more than the one before it — a price
+     * increase worth renegotiating or canceling.
+     *
+     * @param  Collection<int, Transaction>  $transactions  Expense transactions with account loaded.
+     * @return Collection<int, array>
+     */
+    public static function detectPriceChanges(Collection $transactions): Collection
+    {
+        return $transactions
+            ->groupBy(fn (Transaction $t) => TransactionNormalizer::normalize($t->description ?? '') . '|' . $t->account_id)
+            ->filter(fn (Collection $group) => $group->count() >= 2)
+            ->map(fn (Collection $group) => $group->sortBy('date')->values())
+            ->filter(fn (Collection $sorted) => self::monthlyCadence($sorted) !== null)
+            ->map(function (Collection $sorted) {
+                $last = $sorted->last();
+                $previous = $sorted->slice(-2, 1)->first();
+
+                return [
+                    'label' => TransactionNormalizer::label($last->description ?? ''),
+                    'account' => $last->account,
+                    'old_amount' => (float) $previous->amount,
+                    'new_amount' => (float) $last->amount,
+                    'percent_change' => (float) $previous->amount > 0
+                        ? round((((float) $last->amount - (float) $previous->amount) / (float) $previous->amount) * 100, 1)
+                        : null,
+                    'changed_on' => $last->date,
+                ];
+            })
+            ->filter(fn (array $change) => $change['new_amount'] > $change['old_amount'])
+            ->sortByDesc('percent_change')
+            ->values();
+    }
+
+    /**
      * Average per-month interval if every gap between occurrences is
      * (approximately) a whole number of ~30-day cycles apart — so a
      * skipped month (e.g. a ~61-day gap) still counts as monthly cadence,
