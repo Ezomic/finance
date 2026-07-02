@@ -3,6 +3,11 @@
 @section('subtitle', 'Recurring payments and when they land')
 @section('content')
 
+<div class="flex gap-2 mb-6 text-sm">
+    <span class="px-3 py-1.5 rounded-full bg-moss-100 text-moss-900 font-medium">List</span>
+    <a href="{{ route('bills.calendar') }}" class="px-3 py-1.5 rounded-full text-ink/60 hover:bg-moss-50">Calendar</a>
+</div>
+
 <div class="grid gap-6 lg:grid-cols-3">
     <div class="lg:col-span-2 space-y-3">
         @forelse ($bills as $bill)

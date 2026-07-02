@@ -85,6 +85,25 @@ class TransactionOwnershipTest extends TestCase
         $this->assertSame($account->id, $transaction->fresh()->account_id);
     }
 
+    public function test_cannot_split_a_transaction_into_another_households_category(): void
+    {
+        [$household, $user, $account] = $this->setUpHousehold();
+        $otherHousehold = Household::create(['name' => 'Other', 'currency' => 'EUR']);
+        $otherCategory = Category::create(['household_id' => $otherHousehold->id, 'name' => 'Not yours', 'type' => 'expense', 'color' => '#000']);
+
+        $response = $this->actingAs($user)->post('/transactions', [
+            'account_id' => $account->id,
+            'type' => 'expense',
+            'amount' => 100,
+            'date' => '2026-06-01',
+            'splits' => [
+                ['category_id' => $otherCategory->id, 'amount' => 100],
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('splits.0.category_id');
+    }
+
     public function test_can_still_create_a_transaction_with_a_valid_owned_account_and_category(): void
     {
         [$household, $user, $account] = $this->setUpHousehold();
