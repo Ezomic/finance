@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Support\CategoryGuesser;
@@ -51,8 +52,10 @@ class ImportController extends Controller
 
         $format = $request->string("format")->toString();
         $rows = [];
+        $filenames = [];
 
         foreach ($request->file("files") as $file) {
+            $filenames[] = $file->getClientOriginalName();
             $path = $file->storeAs(
                 "imports",
                 uniqid() . "_" . $file->getClientOriginalName(),
@@ -136,6 +139,15 @@ class ImportController extends Controller
                     Transaction::insert($chunk);
                 }
             });
+
+            ActivityLog::create([
+                "household_id" => $household->id,
+                "user_id" => $userId,
+                "subject_type" => Transaction::class,
+                "subject_id" => null,
+                "action" => "imported",
+                "summary" => "Imported {$imported} transaction(s) from " . implode(", ", $filenames) . " into {$account->name}",
+            ]);
         }
 
         return redirect()

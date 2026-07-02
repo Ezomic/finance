@@ -27,8 +27,10 @@
                         ['route' => 'bills.index', 'label' => 'Bills', 'icon' => '⏲'],
                         ['route' => 'subscriptions.index', 'label' => 'Subscriptions', 'icon' => '↻'],
                         ['route' => 'reports.index', 'label' => 'Reports', 'icon' => '▲'],
+                        ['route' => 'forecast.index', 'label' => 'Forecast', 'icon' => '⇢'],
                         ['route' => 'categories.index', 'label' => 'Categories', 'icon' => '◈'],
                         ['route' => 'import.index', 'label' => 'Import', 'icon' => '↑'],
+                        ['route' => 'activity.index', 'label' => 'Activity', 'icon' => '⏱'],
                     ];
                 @endphp
                 @foreach ($links as $link)

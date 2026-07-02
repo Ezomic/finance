@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategorizeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ReportController;
@@ -54,6 +56,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/budgets/{budget}', [BudgetController::class, 'destroy'])->name('budgets.destroy');
 
     Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
+    Route::get('/bills/calendar', [BillController::class, 'calendar'])->name('bills.calendar');
     Route::post('/bills', [BillController::class, 'store'])->name('bills.store');
     Route::put('/bills/{bill}', [BillController::class, 'update'])->name('bills.update');
     Route::post('/bills/{bill}/mark-paid', [BillController::class, 'markPaid'])->name('bills.mark-paid');
@@ -61,8 +64,12 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
+    Route::get('/forecast', [ForecastController::class, 'index'])->name('forecast.index');
+
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
 
     Route::get('/import', [ImportController::class, 'index'])->name('import.index');
     Route::post('/import', [ImportController::class, 'store'])->name('import.store');
+
+    Route::get('/activity', [ActivityLogController::class, 'index'])->name('activity.index');
 });

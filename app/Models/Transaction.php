@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'household_id', 'account_id', 'category_id', 'user_id', 'transfer_account_id',
-        'type', 'amount', 'description', 'date', 'import_batch',
+        'type', 'amount', 'description', 'date', 'import_batch', 'is_split',
     ];
 
     protected function casts(): array
@@ -19,6 +20,7 @@ class Transaction extends Model
         return [
             'amount' => 'decimal:2',
             'date' => 'date',
+            'is_split' => 'boolean',
         ];
     }
 
@@ -42,6 +44,11 @@ class Transaction extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function splits()
+    {
+        return $this->hasMany(TransactionSplit::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -53,5 +60,10 @@ class Transaction extends Model
         $end = $start->copy()->endOfMonth();
 
         return $query->whereBetween('date', [$start, $end]);
+    }
+
+    public function activityLabel(): string
+    {
+        return number_format((float) $this->amount, 2).($this->description ? " ({$this->description})" : '');
     }
 }

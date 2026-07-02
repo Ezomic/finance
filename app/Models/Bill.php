@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class Bill extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'household_id', 'category_id', 'account_id', 'name', 'amount',
@@ -62,5 +64,50 @@ class Bill extends Model
         }
 
         return $this->last_paid_on->greaterThanOrEqualTo($this->nextDueDate()->copy()->subMonthNoOverflow());
+    }
+
+    /**
+     * Every due date this bill lands on within [$from, $to], walking
+     * backward/forward from nextDueDate() by the bill's cadence.
+     *
+     * @return Collection<int, Carbon>
+     */
+    public function occurrencesBetween(Carbon $from, Carbon $to): Collection
+    {
+        $step = fn (Carbon $date, int $direction): Carbon => match ($this->frequency) {
+            'weekly' => $direction > 0 ? $date->copy()->addWeek() : $date->copy()->subWeek(),
+            'yearly' => $direction > 0 ? $date->copy()->addYear() : $date->copy()->subYear(),
+            default => $direction > 0 ? $date->copy()->addMonthNoOverflow() : $date->copy()->subMonthNoOverflow(),
+        };
+
+        $cursor = $this->nextDueDate();
+
+        for ($guard = 0; $cursor->greaterThan($to) && $guard < 1000; $guard++) {
+            $cursor = $step($cursor, -1);
+        }
+
+        $occurrences = collect();
+
+        for ($guard = 0; $cursor->lessThanOrEqualTo($to) && $guard < 1000; $guard++) {
+            if ($cursor->greaterThanOrEqualTo($from)) {
+                $occurrences->push($cursor->copy());
+            }
+            $cursor = $step($cursor, 1);
+        }
+
+        return $occurrences;
+    }
+
+    /**
+     * @return Collection<int, Carbon>
+     */
+    public function occurrencesInMonth(Carbon $month): Collection
+    {
+        return $this->occurrencesBetween($month->copy()->startOfMonth(), $month->copy()->endOfMonth());
+    }
+
+    public function activityLabel(): string
+    {
+        return "{$this->name} ({$this->amount})";
     }
 }

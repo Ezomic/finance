@@ -63,7 +63,13 @@
                     <td class="px-4 py-3 whitespace-nowrap">{{ $t->date->format('M j, Y') }}</td>
                     <td class="px-4 py-3">{{ $t->description ?: '—' }}</td>
                     <td class="px-4 py-3">{{ $t->account->name }}@if($t->type === 'transfer') → {{ $t->transferAccount->name ?? '—' }}@endif</td>
-                    <td class="px-4 py-3">{{ $t->category->name ?? '—' }}</td>
+                    <td class="px-4 py-3">
+                        @if ($t->is_split)
+                            <span class="text-xs bg-moss-50 text-moss-700 px-2 py-0.5 rounded-full" title="{{ $t->splits->pluck('category.name')->filter()->implode(', ') }}">Split ({{ $t->splits->count() }})</span>
+                        @else
+                            {{ $t->category->name ?? '—' }}
+                        @endif
+                    </td>
                     <td class="px-4 py-3 text-right font-medium {{ $t->type === 'income' ? 'text-moss-700' : ($t->type === 'expense' ? 'text-clay' : 'text-ink/60') }}">
                         {{ $t->type === 'expense' ? '-' : ($t->type === 'income' ? '+' : '') }}{{ number_format($t->amount, 2) }}
                     </td>

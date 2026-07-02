@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Support\CategoryGuesser;
@@ -20,6 +21,7 @@ class CategorizeController extends Controller
             ->transactions()
             ->whereNull('category_id')
             ->where('type', '!=', 'transfer')
+            ->where('is_split', false)
             ->when($importBatch, fn ($q) => $q->where('import_batch', $importBatch))
             ->orderBy('date')
             ->get();
@@ -110,6 +112,17 @@ class CategorizeController extends Controller
             ->transactions()
             ->whereIn('id', $data['transaction_ids'])
             ->update(['category_id' => $category->id]);
+
+        if ($count > 0) {
+            ActivityLog::create([
+                'household_id' => $household->id,
+                'user_id' => $request->user()->id,
+                'subject_type' => Transaction::class,
+                'subject_id' => null,
+                'action' => 'categorized',
+                'summary' => "Categorized {$count} transaction(s) as \"{$category->name}\"",
+            ]);
+        }
 
         return redirect()
             ->route('categorize.index', array_filter(['import_batch' => $data['import_batch'] ?? null]))
