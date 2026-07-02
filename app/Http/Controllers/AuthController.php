@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use App\Support\LoginThrottle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -25,6 +28,11 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Those credentials don\'t match our records.'])->onlyInput('email');
         }
 
+        // The throttle:login middleware counts this request regardless of
+        // outcome — clear it on success so a few earlier typos don't lock a
+        // legitimate user out right after they get the password right.
+        RateLimiter::clear(LoginThrottle::cacheKey($request));
+
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
@@ -43,7 +51,7 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $user = \App\Models\User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
