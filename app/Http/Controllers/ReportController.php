@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\CategorySpending;
 use Illuminate\Support\Carbon;
 
 class ReportController extends Controller
@@ -12,17 +13,7 @@ class ReportController extends Controller
 
         // Spending by category, current month.
         $monthStart = Carbon::now()->startOfMonth();
-        $spendingByCategory = $household->transactions()
-            ->where('type', 'expense')
-            ->forMonth($monthStart)
-            ->with('category')
-            ->get()
-            ->groupBy(fn ($t) => $t->category->name ?? 'Uncategorized')
-            ->map(fn ($group) => [
-                'total' => (float) $group->sum('amount'),
-                'color' => optional($group->first()->category)->color ?? '#8A8A8A',
-            ])
-            ->sortByDesc('total');
+        $spendingByCategory = CategorySpending::byCategory($household, $monthStart);
 
         // Income vs expense, last 6 months.
         $months = collect(range(5, 0))->map(fn ($i) => Carbon::now()->subMonths($i)->startOfMonth());
