@@ -2,7 +2,7 @@
 @section('title', 'Add transaction')
 @section('content')
 <div class="card p-6 max-w-lg">
-    <form method="POST" action="{{ route('transactions.store') }}" class="space-y-4" x-data="{ type: 'expense' }">
+    <form method="POST" action="{{ route('transactions.store') }}" class="space-y-4" x-data="{ type: 'expense', amount: null }">
         @csrf
         <div>
             <label class="label">Type</label>
@@ -29,19 +29,11 @@
                 @endforeach
             </select>
         </div>
-        <div x-show="type !== 'transfer'">
-            <label class="label">Category</label>
-            <select name="category_id" class="input">
-                <option value="">None</option>
-                @foreach ($categories as $category)
-                    <option value="{{ $category->id }}">{{ $category->parent_id ? '— ' : '' }}{{ $category->name }} ({{ $category->type }})</option>
-                @endforeach
-            </select>
-        </div>
+        @include('transactions._split-fields')
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <label class="label">Amount</label>
-                <input type="number" step="0.01" name="amount" required class="input">
+                <input type="number" step="0.01" name="amount" x-model.number="amount" required class="input">
             </div>
             <div>
                 <label class="label">Date</label>
