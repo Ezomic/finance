@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Budget extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = ['household_id', 'category_id', 'month', 'amount'];
 
@@ -49,5 +50,13 @@ class Budget extends Model
         }
 
         return min(100, round(($this->spent() / (float) $this->amount) * 100, 1));
+    }
+
+    public function activityLabel(): string
+    {
+        $category = $this->category?->name ?? 'category';
+        $month = $this->month instanceof \Illuminate\Support\Carbon ? $this->month->format('M Y') : (string) $this->month;
+
+        return "{$category} — {$month}";
     }
 }

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class Bill extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'household_id', 'category_id', 'account_id', 'name', 'amount',
@@ -62,5 +63,10 @@ class Bill extends Model
         }
 
         return $this->last_paid_on->greaterThanOrEqualTo($this->nextDueDate()->copy()->subMonthNoOverflow());
+    }
+
+    public function activityLabel(): string
+    {
+        return "{$this->name} ({$this->amount})";
     }
 }

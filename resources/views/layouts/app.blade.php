@@ -29,6 +29,7 @@
                         ['route' => 'reports.index', 'label' => 'Reports', 'icon' => '▲'],
                         ['route' => 'categories.index', 'label' => 'Categories', 'icon' => '◈'],
                         ['route' => 'import.index', 'label' => 'Import', 'icon' => '↑'],
+                        ['route' => 'activity.index', 'label' => 'Activity', 'icon' => '⏱'],
                     ];
                 @endphp
                 @foreach ($links as $link)
