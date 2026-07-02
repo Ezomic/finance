@@ -12,7 +12,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'household_id', 'account_id', 'category_id', 'user_id', 'transfer_account_id',
-        'type', 'amount', 'description', 'date', 'import_batch',
+        'type', 'amount', 'description', 'date', 'import_batch', 'is_split',
     ];
 
     protected function casts(): array
@@ -20,6 +20,7 @@ class Transaction extends Model
         return [
             'amount' => 'decimal:2',
             'date' => 'date',
+            'is_split' => 'boolean',
         ];
     }
 
@@ -41,6 +42,11 @@ class Transaction extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function splits()
+    {
+        return $this->hasMany(TransactionSplit::class);
     }
 
     public function user()
