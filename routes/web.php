@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/budgets/{budget}', [BudgetController::class, 'destroy'])->name('budgets.destroy');
 
     Route::get('/bills', [BillController::class, 'index'])->name('bills.index');
+    Route::get('/bills/calendar', [BillController::class, 'calendar'])->name('bills.calendar');
     Route::post('/bills', [BillController::class, 'store'])->name('bills.store');
     Route::put('/bills/{bill}', [BillController::class, 'update'])->name('bills.update');
     Route::post('/bills/{bill}/mark-paid', [BillController::class, 'markPaid'])->name('bills.mark-paid');
