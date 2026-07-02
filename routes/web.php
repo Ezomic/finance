@@ -7,6 +7,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategorizeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\ReportController;
@@ -61,6 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/bills/{bill}', [BillController::class, 'destroy'])->name('bills.destroy');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+
+    Route::get('/forecast', [ForecastController::class, 'index'])->name('forecast.index');
 
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
 
