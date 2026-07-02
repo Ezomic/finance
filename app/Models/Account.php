@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Account extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'household_id', 'user_id', 'name', 'type', 'currency', 'opening_balance', 'is_archived',
@@ -99,5 +100,10 @@ class Account extends Model
             'investment' => 'Investment',
             default => ucfirst($this->type),
         };
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
     }
 }

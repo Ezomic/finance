@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transaction extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'household_id', 'account_id', 'category_id', 'user_id', 'transfer_account_id',
@@ -53,5 +54,10 @@ class Transaction extends Model
         $end = $start->copy()->endOfMonth();
 
         return $query->whereBetween('date', [$start, $end]);
+    }
+
+    public function activityLabel(): string
+    {
+        return number_format((float) $this->amount, 2).($this->description ? " ({$this->description})" : '');
     }
 }

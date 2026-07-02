@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BudgetController;
@@ -65,4 +66,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/import', [ImportController::class, 'index'])->name('import.index');
     Route::post('/import', [ImportController::class, 'store'])->name('import.store');
+
+    Route::get('/activity', [ActivityLogController::class, 'index'])->name('activity.index');
 });
