@@ -18,11 +18,23 @@ class SubscriptionController extends Controller
             ->get();
 
         $subscriptions = RecurringDetector::detect($transactions);
+        $priceChanges = RecurringDetector::detectPriceChanges($transactions);
 
         $active = $subscriptions->where('is_stale', false);
         $activeMonthlyCost = $active->sum('amount');
         $activeAnnualCost = $active->sum('annual_cost');
 
-        return view('subscriptions.index', compact('subscriptions', 'activeMonthlyCost', 'activeAnnualCost'));
+        $incomeTransactions = $household
+            ->transactions()
+            ->where('type', 'income')
+            ->with(['account', 'category'])
+            ->orderBy('date')
+            ->get();
+
+        $recurringIncome = RecurringDetector::detect($incomeTransactions);
+
+        return view('subscriptions.index', compact(
+            'subscriptions', 'activeMonthlyCost', 'activeAnnualCost', 'priceChanges', 'recurringIncome'
+        ));
     }
 }
