@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Budget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class BudgetController extends Controller
 {
@@ -27,7 +28,7 @@ class BudgetController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'category_id' => ['required', 'exists:categories,id'],
+            'category_id' => ['required', Rule::exists('categories', 'id')->where('household_id', $this->household()->id)],
             'month' => ['required', 'date_format:Y-m'],
             'amount' => ['required', 'numeric', 'min:0'],
         ]);
