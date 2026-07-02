@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@layer base {
+    body {
+        background-color: #F6F4EE;
+        color: #1B2521;
+        -webkit-font-smoothing: antialiased;
+    }
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.75rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s;
+        background-color: #15803d;
+        color: white;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .btn-primary:hover { background-color: #166534; }
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.75rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s;
+        background-color: white;
+        border: 1px solid #86efac;
+        color: #15803d;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .btn-secondary:hover { background-color: #f0fdf4; }
+    .btn-danger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.75rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s;
+        background-color: #b91c1c;
+        color: white;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .btn-danger:hover { background-color: #991b1b; }
+    .input {
+        width: 100%;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        background-color: white;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    .input:focus {
+        outline: none;
+        border-color: #15803d;
+        box-shadow: 0 0 0 1px #15803d;
+    }
+    .label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+}
