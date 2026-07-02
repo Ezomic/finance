@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\CategorySpending;
 use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,10 +33,7 @@ class Budget extends Model
 
     public function spent(): float
     {
-        return (float) Transaction::where('category_id', $this->category_id)
-            ->where('type', 'expense')
-            ->forMonth($this->month)
-            ->sum('amount');
+        return CategorySpending::forCategory($this->category_id, $this->month);
     }
 
     public function remaining(): float

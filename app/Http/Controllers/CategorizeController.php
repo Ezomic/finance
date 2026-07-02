@@ -21,6 +21,7 @@ class CategorizeController extends Controller
             ->transactions()
             ->whereNull('category_id')
             ->where('type', '!=', 'transfer')
+            ->where('is_split', false)
             ->when($importBatch, fn ($q) => $q->where('import_batch', $importBatch))
             ->orderBy('date')
             ->get();

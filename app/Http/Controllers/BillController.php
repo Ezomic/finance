@@ -37,6 +37,36 @@ class BillController extends Controller
         return back()->with('status', 'Bill added.');
     }
 
+    public function calendar(Request $request)
+    {
+        $household = $this->household();
+        $month = $request->filled('month') ? Carbon::parse($request->string('month').'-01') : Carbon::now()->startOfMonth();
+
+        $bills = $household->bills()->where('is_active', true)->with(['category', 'account'])->get();
+
+        $occurrencesByDay = collect();
+        foreach ($bills as $bill) {
+            foreach ($bill->occurrencesInMonth($month) as $date) {
+                $key = $date->format('Y-m-d');
+                $occurrencesByDay->put($key, $occurrencesByDay->get($key, collect())->push([
+                    'bill' => $bill,
+                    'paid' => $date->isSameDay($bill->nextDueDate()) ? $bill->isPaidThisCycle() : $date->isPast(),
+                ]));
+            }
+        }
+
+        $start = $month->copy()->startOfMonth();
+        $end = $month->copy()->endOfMonth();
+        $leadingBlanks = $start->dayOfWeekIso - 1; // Monday-first grid
+
+        $days = collect();
+        for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
+            $days->push(['date' => $date->copy(), 'occurrences' => $occurrencesByDay->get($date->format('Y-m-d'), collect())]);
+        }
+
+        return view('bills.calendar', compact('days', 'month', 'leadingBlanks'));
+    }
+
     public function markPaid(Bill $bill)
     {
         $this->abortUnlessOwned($bill);
