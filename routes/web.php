@@ -20,9 +20,9 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 });
 
 Route::middleware('auth')->group(function () {
@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/households/create', [HouseholdController::class, 'create'])->name('households.create');
     Route::post('/households', [HouseholdController::class, 'store'])->name('households.store');
-    Route::post('/households/join', [HouseholdController::class, 'join'])->name('households.join');
+    Route::post('/households/join', [HouseholdController::class, 'join'])->name('households.join')->middleware('throttle:household-join');
     Route::post('/households/{household}/switch', [HouseholdController::class, 'switch'])->name('households.switch');
     Route::get('/settings/household', [HouseholdController::class, 'settings'])->name('households.settings');
 
