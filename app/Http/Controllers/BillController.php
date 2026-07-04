@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class BillController extends Controller
 {
@@ -22,14 +23,7 @@ class BillController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'due_day' => ['required', 'integer', 'min:1', 'max:28'],
-            'frequency' => ['required', 'in:weekly,monthly,yearly'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'account_id' => ['nullable', 'exists:accounts,id'],
-        ]);
+        $data = $request->validate($this->rules());
         $data['household_id'] = $this->household()->id;
 
         Bill::create($data);
@@ -79,13 +73,7 @@ class BillController extends Controller
     {
         $this->abortUnlessOwned($bill);
 
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'due_day' => ['required', 'integer', 'min:1', 'max:28'],
-            'frequency' => ['required', 'in:weekly,monthly,yearly'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'account_id' => ['nullable', 'exists:accounts,id'],
+        $data = $request->validate($this->rules() + [
             'is_active' => ['sometimes', 'boolean'],
         ]);
         $data['is_active'] = $request->boolean('is_active');
@@ -101,5 +89,19 @@ class BillController extends Controller
         $bill->delete();
 
         return back()->with('status', 'Bill removed.');
+    }
+
+    private function rules(): array
+    {
+        $householdId = $this->household()->id;
+
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'due_day' => ['required', 'integer', 'min:1', 'max:28'],
+            'frequency' => ['required', 'in:weekly,monthly,yearly'],
+            'category_id' => ['nullable', Rule::exists('categories', 'id')->where('household_id', $householdId)],
+            'account_id' => ['nullable', Rule::exists('accounts', 'id')->where('household_id', $householdId)],
+        ];
     }
 }
