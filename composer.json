@@ -1,9 +1,9 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "ezomic/finance",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Self-hosted household finance tracker: accounts, budgets, bills, bank statement import, auto-categorization, subscription detection, cash flow forecasting, and spending insights.",
+    "keywords": ["laravel", "finance", "budgeting"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
