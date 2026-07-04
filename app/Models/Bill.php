@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -9,7 +10,7 @@ use Illuminate\Support\Collection;
 
 class Bill extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'household_id', 'category_id', 'account_id', 'name', 'amount',
@@ -103,5 +104,10 @@ class Bill extends Model
     public function occurrencesInMonth(Carbon $month): Collection
     {
         return $this->occurrencesBetween($month->copy()->startOfMonth(), $month->copy()->endOfMonth());
+    }
+
+    public function activityLabel(): string
+    {
+        return "{$this->name} ({$this->amount})";
     }
 }
