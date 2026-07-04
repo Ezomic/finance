@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Support\RecurringDetector;
+use Illuminate\View\View;
 
 class SubscriptionController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $household = $this->household();
 

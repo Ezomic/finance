@@ -38,3 +38,11 @@ See [`docs/security.md`](docs/security.md) for the full writeup and where this h
 ## Before adding a new form field that references another model
 
 Check [`docs/security.md`](docs/security.md) first and use the `Rule::exists(...)->where('household_id', ...)` pattern from the start — don't let a new field slip in with a bare `exists:` rule.
+
+## Linear
+
+Team: **THI** (Thijssen Software) — `3b1bf7b2-5ff4-4e70-9ca5-a1efb1280839`
+
+Branch format: `feature/thi-{number}-{description}` or `fix/thi-{number}-{description}`
+
+Follow the full workflow in `~/.claude/CLAUDE.md`. See parent context in `~/Projects/finance/CLAUDE.md`.

@@ -16,9 +16,9 @@ class TransactionNormalizer
     {
         $key = self::label($description);
         $key = strtolower($key);
-        $key = preg_replace('/\d+/', '', $key);
-        $key = preg_replace('/[^a-z\s]/', '', $key);
-        $key = preg_replace('/\s+/', ' ', $key);
+        $key = (string) preg_replace('/\d+/', '', $key);
+        $key = (string) preg_replace('/[^a-z\s]/', '', $key);
+        $key = (string) preg_replace('/\s+/', ' ', $key);
 
         return trim($key);
     }
@@ -34,6 +34,6 @@ class TransactionNormalizer
             $description = strstr($description, ' – ', true);
         }
 
-        return trim($description) ?: 'Unknown';
+        return trim($description !== false ? $description : '') ?: 'Unknown';
     }
 }

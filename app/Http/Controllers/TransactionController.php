@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $household = $this->household();
 
@@ -39,7 +42,7 @@ class TransactionController extends Controller
         return view('transactions.index', compact('transactions', 'accounts', 'categories', 'importBatch', 'uncategorizedInBatch'));
     }
 
-    public function create()
+    public function create(): View
     {
         $household = $this->household();
         $accounts = $household->accounts()->where('is_archived', false)->orderBy('name')->get();
@@ -48,7 +51,7 @@ class TransactionController extends Controller
         return view('transactions.create', compact('accounts', 'categories'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate($this->rules());
         $splits = $this->validatedSplits($request, (float) $data['amount']);
@@ -75,7 +78,7 @@ class TransactionController extends Controller
         return redirect()->route('transactions.index')->with('status', 'Transaction recorded.');
     }
 
-    public function edit(Transaction $transaction)
+    public function edit(Transaction $transaction): View
     {
         $this->abortUnlessOwned($transaction);
         $household = $this->household();
@@ -85,7 +88,7 @@ class TransactionController extends Controller
         return view('transactions.edit', compact('transaction', 'accounts', 'categories'));
     }
 
-    public function update(Request $request, Transaction $transaction)
+    public function update(Request $request, Transaction $transaction): RedirectResponse
     {
         $this->abortUnlessOwned($transaction);
 
@@ -112,7 +115,7 @@ class TransactionController extends Controller
         return redirect()->route('transactions.index')->with('status', 'Transaction updated.');
     }
 
-    public function destroy(Transaction $transaction)
+    public function destroy(Transaction $transaction): RedirectResponse
     {
         $this->abortUnlessOwned($transaction);
         $transaction->delete();
@@ -126,6 +129,7 @@ class TransactionController extends Controller
      * belonging to another household fails validation instead of being
      * silently accepted — Transaction::create() itself has no such guard.
      */
+    /** @return array<string, array<int, mixed>> */
     private function rules(): array
     {
         $householdId = $this->household()->id;
@@ -152,9 +156,12 @@ class TransactionController extends Controller
      * transaction's total (within a cent, for rounding). Returns [] when no
      * usable splits were submitted, meaning the transaction is not split.
      */
+    /** @return array<int, array{category_id: int|null, amount: float, description: string|null}> */
     private function validatedSplits(Request $request, float $amount): array
     {
-        $splits = collect($request->input('splits', []))
+        /** @var array<int, array<string, mixed>> $rawSplits */
+        $rawSplits = $request->input('splits', []);
+        $splits = collect($rawSplits)
             ->filter(fn ($split) => filled($split['amount'] ?? null))
             ->values();
 
@@ -165,7 +172,7 @@ class TransactionController extends Controller
         $sum = round($splits->sum(fn ($split) => (float) $split['amount']), 2);
 
         if (abs($sum - round($amount, 2)) > 0.01) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'splits' => "Split amounts (total {$sum}) must add up to the transaction amount ({$amount}).",
             ]);
         }

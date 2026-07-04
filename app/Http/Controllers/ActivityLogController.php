@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ActivityLogController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $household = $this->household();
 

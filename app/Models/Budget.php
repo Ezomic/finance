@@ -6,7 +6,12 @@ use App\Support\CategorySpending;
 use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $month
+ */
 class Budget extends Model
 {
     use HasFactory, LogsActivity;
@@ -21,12 +26,14 @@ class Budget extends Model
         ];
     }
 
-    public function household()
+    /** @return BelongsTo<Household, $this> */
+    public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
-    public function category()
+    /** @return BelongsTo<Category, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
@@ -52,9 +59,8 @@ class Budget extends Model
 
     public function activityLabel(): string
     {
-        $category = $this->category?->name ?? 'category';
-        $month = $this->month instanceof \Illuminate\Support\Carbon ? $this->month->format('M Y') : (string) $this->month;
+        $category = $this->category->name ?? 'category';
 
-        return "{$category} — {$month}";
+        return "{$category} — {$this->month->format('M Y')}";
     }
 }
