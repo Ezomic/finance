@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
@@ -119,18 +120,28 @@ class TransactionController extends Controller
         return back()->with('status', 'Transaction deleted.');
     }
 
+    /**
+     * Scopes every cross-model reference (account, category, transfer
+     * target, split categories) to the current household, so a submitted id
+     * belonging to another household fails validation instead of being
+     * silently accepted — Transaction::create() itself has no such guard.
+     */
     private function rules(): array
     {
+        $householdId = $this->household()->id;
+        $ownedAccount = fn () => Rule::exists('accounts', 'id')->where('household_id', $householdId);
+        $ownedCategory = fn () => Rule::exists('categories', 'id')->where('household_id', $householdId);
+
         return [
-            'account_id' => ['required', 'exists:accounts,id'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'transfer_account_id' => ['nullable', 'exists:accounts,id', 'different:account_id'],
+            'account_id' => ['required', $ownedAccount()],
+            'category_id' => ['nullable', $ownedCategory()],
+            'transfer_account_id' => ['nullable', $ownedAccount(), 'different:account_id'],
             'type' => ['required', 'in:income,expense,transfer'],
             'amount' => ['required', 'numeric', 'min:0.01'],
             'description' => ['nullable', 'string', 'max:255'],
             'date' => ['required', 'date'],
             'splits' => ['nullable', 'array'],
-            'splits.*.category_id' => ['nullable', 'exists:categories,id'],
+            'splits.*.category_id' => ['nullable', $ownedCategory()],
             'splits.*.amount' => ['required_with:splits', 'numeric', 'min:0.01'],
             'splits.*.description' => ['nullable', 'string', 'max:255'],
         ];
