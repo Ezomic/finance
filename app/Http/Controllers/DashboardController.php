@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use App\Support\SpendingInsights;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
@@ -10,6 +11,7 @@ class DashboardController extends Controller
     public function index()
     {
         $household = $this->household();
+        $insights = SpendingInsights::generate($household);
 
         $accounts = $household->accounts()->where('is_archived', false)->get();
         $netWorth = $accounts->sum->balance;
@@ -39,7 +41,7 @@ class DashboardController extends Controller
             ->take(5);
 
         return view('dashboard.index', compact(
-            'accounts', 'netWorth', 'income', 'expense', 'recentTransactions', 'budgets', 'upcomingBills'
+            'accounts', 'netWorth', 'income', 'expense', 'recentTransactions', 'budgets', 'upcomingBills', 'insights'
         ));
     }
 }

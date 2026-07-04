@@ -21,6 +21,20 @@
     </div>
 </div>
 
+@if ($insights->isNotEmpty())
+    <div class="card p-6 mb-8">
+        <h2 class="font-display text-lg font-semibold mb-4">Insights</h2>
+        <ul class="space-y-3">
+            @foreach ($insights as $insight)
+                <li class="flex items-start gap-3 text-sm">
+                    <span class="text-clay mt-0.5">●</span>
+                    <span>{{ $insight['message'] }}</span>
+                </li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="grid gap-6 lg:grid-cols-3">
     <div class="card p-6 lg:col-span-2">
         <div class="flex items-center justify-between mb-4">
