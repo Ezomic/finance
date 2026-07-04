@@ -8,6 +8,8 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Tests\TestCase;
 
 class ImportTest extends TestCase
@@ -133,7 +135,7 @@ class ImportTest extends TestCase
     {
         [$household, $user, $account] = $this->setUpHousehold();
 
-        $mt940 = <<<MT940
+        $mt940 = <<<'MT940'
         :20:REF001
         :25:NL00INGB0001234567
         :28C:1/1
@@ -164,7 +166,7 @@ class ImportTest extends TestCase
     {
         [$household, $user, $account] = $this->setUpHousehold();
 
-        $xml = <<<XML
+        $xml = <<<'XML'
         <?xml version="1.0" encoding="UTF-8"?>
         <Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02">
           <BkToCstmrStmt>
@@ -244,5 +246,50 @@ class ImportTest extends TestCase
             'import_batch' => $batch,
         ]);
         $applyResponse->assertRedirect(route('categorize.index', ['import_batch' => $batch]));
+    }
+
+    public function test_ing_xls_import_parses_transactions_from_spreadsheet(): void
+    {
+        [$household, $user, $account] = $this->setUpHousehold();
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // ING XLS column layout: Rekeningnummer, Muntsoort, Transactiedatum (YYYYMMDD),
+        // Rentedatum, Beginsaldo, Eindsaldo, Transactiebedrag, Omschrijving
+        $sheet->fromArray([
+            ['Rekeningnummer', 'Muntsoort', 'Transactiedatum', 'Rentedatum', 'Beginsaldo', 'Eindsaldo', 'Transactiebedrag', 'Omschrijving'],
+            ['NL00INGB0001234567', 'EUR', '20260601', '20260601', '1000', '979', '-21', '/NAME/Vitens NV/REMI/Invoice 42/'],
+            ['NL00INGB0001234567', 'EUR', '20260602', '20260602', '979', '1079', '100', '/NAME/Employer BV/REMI/Salary June/'],
+        ]);
+
+        $tmpPath = tempnam(sys_get_temp_dir(), 'ing_xls_test_').'.xls';
+        IOFactory::createWriter($spreadsheet, 'Xls')->save($tmpPath);
+
+        $file = new UploadedFile($tmpPath, 'statement.xls', 'application/vnd.ms-excel', null, true);
+
+        $response = $this->actingAs($user)->post('/import', [
+            'files' => [$file],
+            'account_id' => $account->id,
+            'format' => 'ing_xls',
+        ]);
+
+        $response->assertSessionHas('status', 'Import complete: 2 transactions added, 0 duplicates skipped.');
+        $this->assertDatabaseHas('transactions', [
+            'account_id' => $account->id,
+            'date' => '2026-06-01',
+            'type' => 'expense',
+            'amount' => '21.00',
+            'description' => 'Vitens NV – Invoice 42',
+        ]);
+        $this->assertDatabaseHas('transactions', [
+            'account_id' => $account->id,
+            'date' => '2026-06-02',
+            'type' => 'income',
+            'amount' => '100.00',
+            'description' => 'Employer BV – Salary June',
+        ]);
+
+        @unlink($tmpPath);
     }
 }
