@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = ['household_id', 'parent_id', 'name', 'type', 'color'];
 
@@ -34,5 +35,10 @@ class Category extends Model
     public function budgets()
     {
         return $this->hasMany(Budget::class);
+    }
+
+    public function activityLabel(): string
+    {
+        return $this->name;
     }
 }

@@ -75,6 +75,11 @@ class Household extends Model
         return $this->hasMany(NetWorthSnapshot::class);
     }
 
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
     public function netWorth(): float
     {
         return $this->accounts()->where('is_archived', false)->get()->sum->balance;
