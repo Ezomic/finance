@@ -9,7 +9,8 @@
         "php": "^8.3",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
-        "phpoffice/phpspreadsheet": "^5.8"
+        "phpoffice/phpspreadsheet": "^5.8",
+        "thijssensoftware/id-client": "^0.1.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -83,5 +84,10 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [{
+        "name": "id-client",
+        "type": "vcs",
+        "url": "https://github.com/Ezomic/id-client.git"
+    }]
 }
