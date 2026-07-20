@@ -7,6 +7,7 @@ use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class AccountBalanceCheckpointTest extends TestCase
@@ -89,7 +90,7 @@ class AccountBalanceCheckpointTest extends TestCase
         ]);
 
         // Asking for the balance in, say, February should reflect pre-checkpoint history, not the June figure.
-        $this->assertSame(100.0, $account->fresh()->balanceAsOf(\Illuminate\Support\Carbon::parse('2026-02-28')));
+        $this->assertSame(100.0, $account->fresh()->balanceAsOf(Carbon::parse('2026-02-28')));
     }
 
     public function test_transaction_dated_the_same_day_as_the_checkpoint_does_not_double_count(): void

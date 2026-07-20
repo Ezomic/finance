@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class NetWorthSnapshot extends Model
 {
@@ -19,12 +20,14 @@ class NetWorthSnapshot extends Model
         ];
     }
 
-    public function household()
+    /** @return BelongsTo<Household, $this> */
+    public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
-    public function account()
+    /** @return BelongsTo<Account, $this> */
+    public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }

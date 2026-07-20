@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -31,12 +32,14 @@ class User extends Authenticatable
         ];
     }
 
-    public function households()
+    /** @return BelongsToMany<Household, $this> */
+    public function households(): BelongsToMany
     {
         return $this->belongsToMany(Household::class)->withPivot('role')->withTimestamps();
     }
 
-    public function currentHousehold()
+    /** @return BelongsTo<Household, $this> */
+    public function currentHousehold(): BelongsTo
     {
         return $this->belongsTo(Household::class, 'current_household_id');
     }

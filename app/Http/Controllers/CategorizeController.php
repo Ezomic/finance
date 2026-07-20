@@ -4,15 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Category;
+use App\Models\Household;
 use App\Models\Transaction;
 use App\Support\CategoryGuesser;
 use App\Support\TransactionNormalizer;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\View\View;
 
 class CategorizeController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $household = $this->household();
         $importBatch = $request->string('import_batch')->toString() ?: null;
@@ -37,7 +40,7 @@ class CategorizeController extends Controller
 
                 // 1. What has this household called similar transactions before?
                 $suggestedCategoryId = null;
-                if (!empty($historyVotes[$groupKey])) {
+                if (! empty($historyVotes[$groupKey])) {
                     arsort($historyVotes[$groupKey]);
                     $suggestedCategoryId = array_key_first($historyVotes[$groupKey]);
                 }
@@ -45,7 +48,7 @@ class CategorizeController extends Controller
                 $suggestedNewName = null;
 
                 // 2. Fall back to keyword rules.
-                if (!$suggestedCategoryId) {
+                if (! $suggestedCategoryId) {
                     $guessedName = CategoryGuesser::guess($first->description ?? '');
 
                     if ($guessedName) {
@@ -63,7 +66,7 @@ class CategorizeController extends Controller
                 }
 
                 // 3. Nothing matched — suggest a new category named after the merchant.
-                if (!$suggestedCategoryId && !$suggestedNewName) {
+                if (! $suggestedCategoryId && ! $suggestedNewName) {
                     $suggestedNewName = $label;
                 }
 
@@ -83,7 +86,7 @@ class CategorizeController extends Controller
         return view('categorize.index', compact('groups', 'categories', 'importBatch'));
     }
 
-    public function apply(Request $request)
+    public function apply(Request $request): RedirectResponse
     {
         $household = $this->household();
 
@@ -134,7 +137,8 @@ class CategorizeController extends Controller
      * categorized transactions to the number of times each category was
      * used for it, so we can suggest the household's most common pick.
      */
-    private function historyVotes($household): array
+    /** @return array<string, array<int|string, int>> */
+    private function historyVotes(Household $household): array
     {
         $history = $household
             ->transactions()
@@ -158,6 +162,6 @@ class CategorizeController extends Controller
 
     private function groupKey(Transaction $t): string
     {
-        return TransactionNormalizer::normalize($t->description ?? '') . '|' . $t->type;
+        return TransactionNormalizer::normalize($t->description ?? '').'|'.$t->type;
     }
 }

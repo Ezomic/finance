@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Bill;
 use App\Support\SpendingInsights;
 use Illuminate\Support\Carbon;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $household = $this->household();
         $insights = SpendingInsights::generate($household);

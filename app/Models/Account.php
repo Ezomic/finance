@@ -5,6 +5,9 @@ namespace App\Models;
 use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class Account extends Model
 {
@@ -22,27 +25,32 @@ class Account extends Model
         ];
     }
 
-    public function household()
+    /** @return BelongsTo<Household, $this> */
+    public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
-    public function owner()
+    /** @return BelongsTo<User, $this> */
+    public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function transactions()
+    /** @return HasMany<Transaction, $this> */
+    public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
-    public function incomingTransfers()
+    /** @return HasMany<Transaction, $this> */
+    public function incomingTransfers(): HasMany
     {
         return $this->hasMany(Transaction::class, 'transfer_account_id');
     }
 
-    public function netWorthSnapshots()
+    /** @return HasMany<NetWorthSnapshot, $this> */
+    public function netWorthSnapshots(): HasMany
     {
         return $this->hasMany(NetWorthSnapshot::class)->orderByDesc('date');
     }
@@ -67,7 +75,7 @@ class Account extends Model
      * checkpoint at all, it falls back to opening balance plus every
      * transaction up to $end, as before.
      */
-    public function balanceAsOf($end): float
+    public function balanceAsOf(Carbon $end): float
     {
         $snapshot = $this->netWorthSnapshots()->where('date', '<=', $end)->first();
 
@@ -97,7 +105,6 @@ class Account extends Model
             'savings' => 'Savings',
             'credit' => 'Credit Card',
             'cash' => 'Cash',
-            'investment' => 'Investment',
             default => ucfirst($this->type),
         };
     }

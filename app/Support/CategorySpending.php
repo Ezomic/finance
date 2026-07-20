@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\TransactionSplit;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -14,7 +15,7 @@ use Illuminate\Support\Collection;
  */
 class CategorySpending
 {
-    public static function forCategory(int $categoryId, $month): float
+    public static function forCategory(int $categoryId, Carbon $month): float
     {
         $direct = Transaction::where('category_id', $categoryId)
             ->where('type', 'expense')
@@ -32,7 +33,7 @@ class CategorySpending
     /**
      * @return Collection<string, array{total: float, color: string}> keyed by category name
      */
-    public static function byCategory(Household $household, $month): Collection
+    public static function byCategory(Household $household, Carbon $month): Collection
     {
         $rows = collect();
 
@@ -49,9 +50,9 @@ class CategorySpending
             ]));
 
         TransactionSplit::whereHas('transaction', fn ($q) => $q
-                ->where('household_id', $household->id)
-                ->where('type', 'expense')
-                ->forMonth($month))
+            ->where('household_id', $household->id)
+            ->where('type', 'expense')
+            ->forMonth($month))
             ->with('category')
             ->get()
             ->each(fn (TransactionSplit $s) => $rows->push([
@@ -60,10 +61,11 @@ class CategorySpending
                 'amount' => (float) $s->amount,
             ]));
 
+        /** @var Collection<string, array{total: float, color: string}> */
         return $rows->groupBy('name')
             ->map(fn (Collection $group) => [
-                'total' => $group->sum('amount'),
-                'color' => $group->first()['color'],
+                'total' => (float) $group->sum('amount'),
+                'color' => (string) $group->first()['color'],
             ])
             ->sortByDesc('total');
     }

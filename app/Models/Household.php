@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Household extends Model
 {
@@ -18,17 +21,20 @@ class Household extends Model
         });
     }
 
-    public function users()
+    /** @return BelongsToMany<User, $this> */
+    public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)->withPivot('role')->withTimestamps();
     }
 
-    public function accounts()
+    /** @return HasMany<Account, $this> */
+    public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
     }
 
-    public function categories()
+    /** @return HasMany<Category, $this> */
+    public function categories(): HasMany
     {
         return $this->hasMany(Category::class);
     }
@@ -37,8 +43,10 @@ class Household extends Model
      * Flat list of categories ordered so each top-level category is
      * immediately followed by its own subcategories — convenient for
      * rendering nested lists and indented <select> options alike.
+     *
+     * @return Collection<int, Category>
      */
-    public function categoriesTree(?string $type = null)
+    public function categoriesTree(?string $type = null): Collection
     {
         $query = $this->categories()->orderBy('type')->orderBy('name');
 
@@ -55,27 +63,32 @@ class Household extends Model
             ->values();
     }
 
-    public function transactions()
+    /** @return HasMany<Transaction, $this> */
+    public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
-    public function budgets()
+    /** @return HasMany<Budget, $this> */
+    public function budgets(): HasMany
     {
         return $this->hasMany(Budget::class);
     }
 
-    public function bills()
+    /** @return HasMany<Bill, $this> */
+    public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
     }
 
-    public function netWorthSnapshots()
+    /** @return HasMany<NetWorthSnapshot, $this> */
+    public function netWorthSnapshots(): HasMany
     {
         return $this->hasMany(NetWorthSnapshot::class);
     }
 
-    public function activityLogs()
+    /** @return HasMany<ActivityLog, $this> */
+    public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
     }

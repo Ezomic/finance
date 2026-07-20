@@ -15,20 +15,22 @@ use Illuminate\Support\Collection;
 class RecurringDetector
 {
     private const CYCLE_DAYS = 30;
+
     private const CYCLE_TOLERANCE_DAYS = 5;
+
     private const STALE_AFTER_DAYS = 45;
 
     /**
      * @param  Collection<int, Transaction>  $transactions  Expense transactions with account/category loaded.
-     * @return Collection<int, array>
+     * @return Collection<int, mixed>
      */
     public static function detect(Collection $transactions): Collection
     {
         $candidates = $transactions
             ->groupBy(
                 fn (Transaction $t) => TransactionNormalizer::normalize($t->description ?? '')
-                    . '|' . $t->account_id
-                    . '|' . number_format((float) $t->amount, 2, '.', ''),
+                    .'|'.$t->account_id
+                    .'|'.number_format((float) $t->amount, 2, '.', ''),
             )
             ->filter(fn (Collection $group) => $group->count() >= 2)
             ->map(fn (Collection $group) => $group->sortBy('date')->values())
@@ -42,7 +44,12 @@ class RecurringDetector
                 $first = $sorted->first();
                 $last = $sorted->last();
                 $avgGap = (int) round($data['cadence']);
-                $isStale = $last->date->lt(Carbon::now()->subDays(self::STALE_AFTER_DAYS));
+                /** @var Carbon $lastDate */
+                $lastDate = $last->date;
+                $isStale = $lastDate->lt(Carbon::now()->subDays(self::STALE_AFTER_DAYS));
+
+                /** @var Carbon $firstDate */
+                $firstDate = $first->date;
 
                 return [
                     'label' => TransactionNormalizer::label($first->description ?? ''),
@@ -52,9 +59,9 @@ class RecurringDetector
                     'occurrences' => $sorted,
                     'count' => $sorted->count(),
                     'avg_interval_days' => $avgGap,
-                    'first_date' => $first->date,
-                    'last_date' => $last->date,
-                    'next_expected_date' => $last->date->copy()->addDays($avgGap ?: self::CYCLE_DAYS),
+                    'first_date' => $firstDate,
+                    'last_date' => $lastDate,
+                    'next_expected_date' => $lastDate->copy()->addDays($avgGap ?: self::CYCLE_DAYS),
                     'annual_cost' => round((float) $first->amount * (365 / ($avgGap ?: self::CYCLE_DAYS)), 2),
                     'is_stale' => $isStale,
                 ];
@@ -79,12 +86,12 @@ class RecurringDetector
      * increase worth renegotiating or canceling.
      *
      * @param  Collection<int, Transaction>  $transactions  Expense transactions with account loaded.
-     * @return Collection<int, array>
+     * @return Collection<int, mixed>
      */
     public static function detectPriceChanges(Collection $transactions): Collection
     {
         return $transactions
-            ->groupBy(fn (Transaction $t) => TransactionNormalizer::normalize($t->description ?? '') . '|' . $t->account_id)
+            ->groupBy(fn (Transaction $t) => TransactionNormalizer::normalize($t->description ?? '').'|'.$t->account_id)
             ->filter(fn (Collection $group) => $group->count() >= 2)
             ->map(fn (Collection $group) => $group->sortBy('date')->values())
             ->filter(fn (Collection $sorted) => self::monthlyCadence($sorted) !== null)
@@ -114,12 +121,17 @@ class RecurringDetector
      * skipped month (e.g. a ~61-day gap) still counts as monthly cadence,
      * not a broken pattern. Returns null if any gap doesn't fit.
      */
+    /** @param Collection<int, Transaction> $sorted */
     private static function monthlyCadence(Collection $sorted): ?float
     {
         $perCycleGaps = [];
 
         for ($i = 1; $i < $sorted->count(); $i++) {
-            $days = $sorted[$i]->date->diffInDays($sorted[$i - 1]->date, true);
+            /** @var Carbon $dateI */
+            $dateI = $sorted[$i]->date;
+            /** @var Carbon $datePrev */
+            $datePrev = $sorted[$i - 1]->date;
+            $days = $dateI->diffInDays($datePrev, true);
             $cycles = max(1, (int) round($days / self::CYCLE_DAYS));
             $perCycle = $days / $cycles;
 
