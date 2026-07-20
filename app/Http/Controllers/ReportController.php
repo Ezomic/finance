@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Support\CategorySpending;
 use Illuminate\Support\Carbon;
+use Illuminate\View\View;
 
 class ReportController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $household = $this->household();
 

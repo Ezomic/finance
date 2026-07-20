@@ -3,9 +3,21 @@
 namespace App\Models;
 
 use App\Support\Concerns\LogsActivity;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $date
+ * @property string $type
+ * @property string $amount
+ * @property string|null $description
+ * @property string|null $import_batch
+ * @property bool $is_split
+ */
 class Transaction extends Model
 {
     use HasFactory, LogsActivity;
@@ -24,42 +36,49 @@ class Transaction extends Model
         ];
     }
 
-    public function household()
+    /** @return BelongsTo<Household, $this> */
+    public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
-    public function account()
+    /** @return BelongsTo<Account, $this> */
+    public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    public function transferAccount()
+    /** @return BelongsTo<Account, $this> */
+    public function transferAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'transfer_account_id');
     }
 
-    public function category()
+    /** @return BelongsTo<Category, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function splits()
+    /** @return HasMany<TransactionSplit, $this> */
+    public function splits(): HasMany
     {
         return $this->hasMany(TransactionSplit::class);
     }
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function scopeForMonth($query, $month)
+    /** @param Builder<Transaction> $query */
+    public function scopeForMonth(Builder $query, Carbon $month): void
     {
-        $start = \Illuminate\Support\Carbon::parse($month)->startOfMonth();
+        $start = $month->copy()->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        return $query->whereBetween('date', [$start, $end]);
+        $query->whereBetween('date', [$start, $end]);
     }
 
     public function activityLabel(): string

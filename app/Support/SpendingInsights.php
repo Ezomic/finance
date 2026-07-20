@@ -14,13 +14,20 @@ use Illuminate\Support\Collection;
 class SpendingInsights
 {
     private const CATEGORY_TREND_MONTHS = 3;
+
     private const OUTLIER_LOOKBACK_MONTHS = 6;
+
     private const CATEGORY_TREND_MULTIPLIER = 1.3;
+
     private const CATEGORY_TREND_MIN_DELTA = 20.0;
+
     private const OUTLIER_MULTIPLIER = 2.0;
+
     private const OUTLIER_MIN_SAMPLE = 5;
+
     private const MAX_INSIGHTS = 5;
 
+    /** @return Collection<int, array{type: string, message: string, magnitude: float}> */
     public static function generate(Household $household): Collection
     {
         return self::categoryTrends($household)
@@ -30,6 +37,7 @@ class SpendingInsights
             ->values();
     }
 
+    /** @return Collection<int, array{type: string, message: string, magnitude: float}> */
     private static function categoryTrends(Household $household): Collection
     {
         $thisMonth = Carbon::now()->startOfMonth();
@@ -56,7 +64,7 @@ class SpendingInsights
                 $percent = round(($delta / $average) * 100);
                 $insights->push([
                     'type' => 'category_trend',
-                    'message' => "{$category->name} is {$percent}% above its ".self::CATEGORY_TREND_MONTHS."-month average this month (".number_format($current, 2).' vs '.number_format($average, 2).').',
+                    'message' => "{$category->name} is {$percent}% above its ".self::CATEGORY_TREND_MONTHS.'-month average this month ('.number_format($current, 2).' vs '.number_format($average, 2).').',
                     'magnitude' => $delta,
                 ]);
             }
@@ -65,6 +73,7 @@ class SpendingInsights
         return $insights;
     }
 
+    /** @return Collection<int, array{type: string, message: string, magnitude: float}> */
     private static function outlierTransactions(Household $household): Collection
     {
         $thisMonth = Carbon::now()->startOfMonth();

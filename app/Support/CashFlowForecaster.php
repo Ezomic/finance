@@ -15,6 +15,7 @@ class CashFlowForecaster
 {
     private const TRAILING_DAYS = 90;
 
+    /** @return array{points: Collection<int, array{date: Carbon, balance: float}>, events: Collection<int, array{date: Carbon, label: string, amount: float, type: string}>, discretionary_daily: float, start_balance: float} */
     public static function project(Household $household, int $days = 60): array
     {
         $today = Carbon::today();
@@ -59,6 +60,7 @@ class CashFlowForecaster
         ];
     }
 
+    /** @param array<string, mixed> $sub */
     private static function matchesABill(array $sub, Collection $bills): bool
     {
         return $bills->contains(fn ($bill) => $bill->account_id === $sub['account']->id
@@ -76,7 +78,7 @@ class CashFlowForecaster
     }
 
     /**
-     * @param  Collection<int, array>  $candidates  RecurringDetector::detect() output
+     * @param  Collection<int, mixed>  $candidates  RecurringDetector::detect() output
      * @param  int  $sign  1 for income (adds to balance), -1 for expenses (subtracts)
      */
     private static function recurringEvents(Collection $candidates, Carbon $from, Carbon $to, int $sign): Collection
@@ -107,6 +109,7 @@ class CashFlowForecaster
      * Blended daily spend for everything not already captured as a bill or
      * detected recurring expense, based on the trailing window.
      */
+    /** @param Collection<int, mixed> $recurringExpenses */
     private static function discretionaryDailyRate(Household $household, Carbon $today, Collection $bills, Collection $recurringExpenses): float
     {
         $trailingStart = $today->copy()->subDays(self::TRAILING_DAYS);

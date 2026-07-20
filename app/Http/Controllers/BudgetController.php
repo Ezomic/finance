@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Budget;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class BudgetController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $household = $this->household();
         $month = $request->filled('month') ? Carbon::parse($request->string('month').'-01') : Carbon::now()->startOfMonth();
@@ -25,7 +27,7 @@ class BudgetController extends Controller
         return view('budgets.index', compact('budgets', 'categories', 'month'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'category_id' => ['required', Rule::exists('categories', 'id')->where('household_id', $this->household()->id)],
@@ -45,7 +47,7 @@ class BudgetController extends Controller
         return back()->with('status', 'Budget saved.');
     }
 
-    public function destroy(Budget $budget)
+    public function destroy(Budget $budget): RedirectResponse
     {
         $this->abortUnlessOwned($budget);
         $budget->delete();

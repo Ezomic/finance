@@ -3,16 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Household;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class HouseholdController extends Controller
 {
-    public function create()
+    public function create(): View
     {
         return view('households.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -38,7 +40,7 @@ class HouseholdController extends Controller
         return redirect()->route('dashboard')->with('status', 'Household created. Welcome in!');
     }
 
-    public function join(Request $request)
+    public function join(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'invite_code' => ['required', 'string'],
@@ -56,7 +58,7 @@ class HouseholdController extends Controller
         return redirect()->route('dashboard')->with('status', "You've joined {$household->name}.");
     }
 
-    public function switch(Request $request, Household $household)
+    public function switch(Request $request, Household $household): RedirectResponse
     {
         if (! $request->user()->households()->where('households.id', $household->id)->exists()) {
             abort(403);
@@ -67,7 +69,7 @@ class HouseholdController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function settings()
+    public function settings(): View
     {
         $household = $this->household();
         $household->load('users');

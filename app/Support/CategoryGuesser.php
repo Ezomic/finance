@@ -8,49 +8,50 @@ namespace App\Support;
  */
 class CategoryGuesser
 {
+    /** @var array<string, list<string>> */
     private static array $rules = [
-        "Groceries" => [
-            "jumbo",
-            "albert heijn",
-            "lidl",
-            "aldi",
-            "kruidvat",
-            "supermarkt",
-            "ah ",
-            "spar",
+        'Groceries' => [
+            'jumbo',
+            'albert heijn',
+            'lidl',
+            'aldi',
+            'kruidvat',
+            'supermarkt',
+            'ah ',
+            'spar',
         ],
-        "Transport" => [
-            "ns ",
-            "ovpay",
-            "parkeer",
-            "benzine",
-            "shell",
-            "bp ",
-            "total energie",
-            "bike",
-            "ov-chipkaart",
+        'Transport' => [
+            'ns ',
+            'ovpay',
+            'parkeer',
+            'benzine',
+            'shell',
+            'bp ',
+            'total energie',
+            'bike',
+            'ov-chipkaart',
         ],
-        "Housing" => ["huur", "rent", "hypotheek", "mortgage", "woondi"],
-        "Utilities" => [
-            "vitens",
-            "odido",
-            "eneco",
-            "vattenfall",
-            "ziggo",
-            "kpn",
-            "tele2",
-            "t-mobile",
+        'Housing' => ['huur', 'rent', 'hypotheek', 'mortgage', 'woondi'],
+        'Utilities' => [
+            'vitens',
+            'odido',
+            'eneco',
+            'vattenfall',
+            'ziggo',
+            'kpn',
+            'tele2',
+            't-mobile',
         ],
-        "Entertainment" => [
-            "netflix",
-            "spotify",
-            "disney",
-            "youtube",
-            "steam",
-            "playstation",
+        'Entertainment' => [
+            'netflix',
+            'spotify',
+            'disney',
+            'youtube',
+            'steam',
+            'playstation',
         ],
-        "Salary" => ["salaris", "salary", "loon", "payroll"],
-        "Insurance" => ["inshared", "insurance", "verzekering", "allianz"],
+        'Salary' => ['salaris', 'salary', 'loon', 'payroll'],
+        'Insurance' => ['inshared', 'insurance', 'verzekering', 'allianz'],
     ];
 
     /**

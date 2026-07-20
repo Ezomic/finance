@@ -1,0 +1,15 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 7
+    paths:
+        - app
+    parallel:
+        maximumNumberOfProcesses: 1
+        processTimeout: 300.0
+        minimumNumberOfJobsPerProcess: 1000
+    ignoreErrors:
+        - identifier: missingType.generics
+        - identifier: argument.templateType
+        - message: '#Call to an undefined method.*::forMonth\(\)#'

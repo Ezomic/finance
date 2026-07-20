@@ -3,19 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Household;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
+use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $categories = $this->household()->categoriesTree();
 
         return view('categories.index', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $household = $this->household();
 
@@ -26,8 +30,10 @@ class CategoryController extends Controller
             'parent_id' => ['nullable', $this->parentRule($household)],
         ]);
 
-        if (!empty($data['parent_id'])) {
-            $data['type'] = Category::findOrFail($data['parent_id'])->type;
+        if (! empty($data['parent_id'])) {
+            /** @var Category $parent */
+            $parent = Category::findOrFail($data['parent_id']);
+            $data['type'] = $parent->type;
         }
 
         $data['household_id'] = $household->id;
@@ -37,7 +43,7 @@ class CategoryController extends Controller
         return back()->with('status', 'Category added.');
     }
 
-    public function update(Request $request, Category $category)
+    public function update(Request $request, Category $category): RedirectResponse
     {
         $this->abortUnlessOwned($category);
         $household = $this->household();
@@ -50,7 +56,7 @@ class CategoryController extends Controller
                 'nullable',
                 $this->parentRule($household),
                 function ($attribute, $value, $fail) use ($category) {
-                    if (!$value) {
+                    if (! $value) {
                         return;
                     }
                     if ((int) $value === $category->id) {
@@ -63,8 +69,10 @@ class CategoryController extends Controller
             ],
         ]);
 
-        if (!empty($data['parent_id'])) {
-            $data['type'] = Category::findOrFail($data['parent_id'])->type;
+        if (! empty($data['parent_id'])) {
+            /** @var Category $parent */
+            $parent = Category::findOrFail($data['parent_id']);
+            $data['type'] = $parent->type;
         }
 
         $category->update($data);
@@ -72,7 +80,7 @@ class CategoryController extends Controller
         return back()->with('status', 'Category updated.');
     }
 
-    public function destroy(Category $category)
+    public function destroy(Category $category): RedirectResponse
     {
         $this->abortUnlessOwned($category);
         $category->delete();
@@ -84,7 +92,7 @@ class CategoryController extends Controller
      * A parent must belong to the same household and be top-level itself —
      * subcategories are capped at one level deep.
      */
-    private function parentRule($household)
+    private function parentRule(Household $household): Exists
     {
         return Rule::exists('categories', 'id')->where(
             fn ($query) => $query->where('household_id', $household->id)->whereNull('parent_id'),

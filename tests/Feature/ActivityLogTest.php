@@ -9,6 +9,7 @@ use App\Models\Household;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class ActivityLogTest extends TestCase
@@ -90,7 +91,7 @@ class ActivityLogTest extends TestCase
         [$household, $user, $account] = $this->setUpHousehold();
 
         $csv = "date,amount,description\n2026-06-01,-10,Coffee\n2026-06-02,-20,Lunch\n2026-06-03,-30,Dinner\n";
-        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('statement.csv', $csv);
+        $file = UploadedFile::fake()->createWithContent('statement.csv', $csv);
 
         $this->actingAs($user)->post('/import', [
             'files' => [$file],

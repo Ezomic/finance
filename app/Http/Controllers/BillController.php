@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bill;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class BillController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         $household = $this->household();
         $bills = $household->bills()->with(['category', 'account'])->orderBy('due_day')->get()
@@ -21,7 +23,7 @@ class BillController extends Controller
         return view('bills.index', compact('bills', 'categories', 'accounts'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate($this->rules());
         $data['household_id'] = $this->household()->id;
@@ -31,7 +33,7 @@ class BillController extends Controller
         return back()->with('status', 'Bill added.');
     }
 
-    public function calendar(Request $request)
+    public function calendar(Request $request): View
     {
         $household = $this->household();
         $month = $request->filled('month') ? Carbon::parse($request->string('month').'-01') : Carbon::now()->startOfMonth();
@@ -61,7 +63,7 @@ class BillController extends Controller
         return view('bills.calendar', compact('days', 'month', 'leadingBlanks'));
     }
 
-    public function markPaid(Bill $bill)
+    public function markPaid(Bill $bill): RedirectResponse
     {
         $this->abortUnlessOwned($bill);
         $bill->update(['last_paid_on' => Carbon::today()]);
@@ -69,7 +71,7 @@ class BillController extends Controller
         return back()->with('status', "{$bill->name} marked as paid.");
     }
 
-    public function update(Request $request, Bill $bill)
+    public function update(Request $request, Bill $bill): RedirectResponse
     {
         $this->abortUnlessOwned($bill);
 
@@ -83,7 +85,7 @@ class BillController extends Controller
         return back()->with('status', 'Bill updated.');
     }
 
-    public function destroy(Bill $bill)
+    public function destroy(Bill $bill): RedirectResponse
     {
         $this->abortUnlessOwned($bill);
         $bill->delete();
@@ -91,6 +93,7 @@ class BillController extends Controller
         return back()->with('status', 'Bill removed.');
     }
 
+    /** @return array<string, array<int, mixed>> */
     private function rules(): array
     {
         $householdId = $this->household()->id;

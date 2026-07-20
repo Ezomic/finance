@@ -5,9 +5,13 @@ namespace App\Models;
 use App\Support\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
+/**
+ * @property Carbon|null $last_paid_on
+ */
 class Bill extends Model
 {
     use HasFactory, LogsActivity;
@@ -26,17 +30,20 @@ class Bill extends Model
         ];
     }
 
-    public function household()
+    /** @return BelongsTo<Household, $this> */
+    public function household(): BelongsTo
     {
         return $this->belongsTo(Household::class);
     }
 
-    public function category()
+    /** @return BelongsTo<Category, $this> */
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function account()
+    /** @return BelongsTo<Account, $this> */
+    public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
