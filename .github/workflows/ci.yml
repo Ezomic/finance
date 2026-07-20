@@ -37,10 +37,10 @@ jobs:
         run: npm ci && npm run build
 
       - name: Check code style (Pint)
-        run: php vendor/bin/pint --test
+        run: composer test:lint
 
       - name: Static analysis (PHPStan level 7)
-        run: php vendor/bin/phpstan analyse app --memory-limit=512M
+        run: composer analyse
 
       - name: Run tests
         run: php artisan test

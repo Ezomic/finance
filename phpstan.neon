@@ -5,6 +5,10 @@ parameters:
     level: 7
     paths:
         - app
+        - bootstrap/app.php
+        - config
+        - database
+        - routes
     parallel:
         maximumNumberOfProcesses: 1
         processTimeout: 300.0
