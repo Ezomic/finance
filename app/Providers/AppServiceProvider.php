@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Services\Portal\IdPortalClient;
 use App\Support\LoginThrottle;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,6 +29,15 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('household-join', function (Request $request) {
             return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
+
+        View::composer('layouts.app', function ($view): void {
+            $user = Auth::user();
+
+            $view->with(
+                'portalApps',
+                $user === null ? [] : app(IdPortalClient::class)->appsFor($user),
+            );
         });
     }
 }

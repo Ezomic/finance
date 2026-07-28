@@ -47,7 +47,9 @@
 
             <div class="mt-auto pt-6 border-t border-moss-100">
                 @auth
-                    <div class="text-xs text-ink/50 mb-2">Signed in as</div>
+                    @include('partials.portal-switcher')
+
+                    <div class="text-xs text-ink/50 mb-2 mt-3">Signed in as</div>
                     <div class="text-sm font-medium mb-3">{{ auth()->user()->name }}</div>
                     <a href="{{ route('households.settings') }}" class="text-xs text-moss-700 hover:underline">Household settings</a>
                     <form method="POST" action="{{ route('logout') }}" class="mt-3">
