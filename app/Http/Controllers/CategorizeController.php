@@ -53,7 +53,7 @@ class CategorizeController extends Controller
 
                     if ($guessedName) {
                         $existing = $categories->first(
-                            fn (Category $c) => $c->type === $first->type
+                            fn (Category $c) => $c->type === $first?->type
                                 && strcasecmp($c->name, $guessedName) === 0,
                         );
 
@@ -73,7 +73,7 @@ class CategorizeController extends Controller
                 return [
                     'key' => $groupKey,
                     'label' => $label,
-                    'type' => $first->type,
+                    'type' => $first?->type,
                     'transactions' => $transactions->sortByDesc('date')->values(),
                     'total' => $transactions->sum('amount'),
                     'suggested_category_id' => $suggestedCategoryId,
@@ -90,7 +90,7 @@ class CategorizeController extends Controller
     {
         $household = $this->household();
 
-        $data = $request->validate([
+        $validated = $request->validate([
             'transaction_ids' => ['required', 'array', 'min:1'],
             'transaction_ids.*' => ['integer'],
             'category_choice' => ['required', 'string'],
@@ -98,6 +98,12 @@ class CategorizeController extends Controller
             'new_category_type' => ['required_if:category_choice,new', 'nullable', 'in:income,expense'],
             'import_batch' => ['nullable', 'string'],
         ]);
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
 
         if ($data['category_choice'] === 'new') {
             $category = Category::create([
@@ -107,7 +113,7 @@ class CategorizeController extends Controller
                 'color' => '#4E7A48',
             ]);
         } else {
-            $category = Category::findOrFail((int) $data['category_choice']);
+            $category = Category::findOrFail($request->integer('category_choice'));
             $this->abortUnlessOwned($category);
         }
 
@@ -119,7 +125,7 @@ class CategorizeController extends Controller
         if ($count > 0) {
             ActivityLog::create([
                 'household_id' => $household->id,
-                'user_id' => $request->user()->id,
+                'user_id' => $this->currentUser()->id,
                 'subject_type' => Transaction::class,
                 'subject_id' => null,
                 'action' => 'categorized',

@@ -53,8 +53,14 @@ class TransactionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate($this->rules());
-        $splits = $this->validatedSplits($request, (float) $data['amount']);
+        $validated = $request->validate($this->rules());
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+        $splits = $this->validatedSplits($request, $request->float('amount'));
 
         if ($data['type'] !== 'transfer') {
             $data['transfer_account_id'] = null;
@@ -63,7 +69,7 @@ class TransactionController extends Controller
         }
 
         $data['household_id'] = $this->household()->id;
-        $data['user_id'] = $request->user()->id;
+        $data['user_id'] = $this->currentUser()->id;
         $data['is_split'] = ! empty($splits);
         if ($data['is_split']) {
             $data['category_id'] = null;
@@ -92,8 +98,14 @@ class TransactionController extends Controller
     {
         $this->abortUnlessOwned($transaction);
 
-        $data = $request->validate($this->rules());
-        $splits = $this->validatedSplits($request, (float) $data['amount']);
+        $validated = $request->validate($this->rules());
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+        $splits = $this->validatedSplits($request, $request->float('amount'));
 
         if ($data['type'] !== 'transfer') {
             $data['transfer_account_id'] = null;
@@ -169,7 +181,7 @@ class TransactionController extends Controller
             return [];
         }
 
-        $sum = round($splits->sum(fn ($split) => (float) $split['amount']), 2);
+        $sum = round($splits->sum(fn (array $split): float => is_numeric($split['amount']) ? (float) $split['amount'] : 0.0), 2);
 
         if (abs($sum - round($amount, 2)) > 0.01) {
             throw ValidationException::withMessages([
@@ -177,10 +189,10 @@ class TransactionController extends Controller
             ]);
         }
 
-        return $splits->map(fn ($split) => [
-            'category_id' => $split['category_id'] ?? null,
-            'amount' => $split['amount'],
-            'description' => $split['description'] ?? null,
-        ])->all();
+        return $splits->map(fn (array $split): array => [
+            'category_id' => is_numeric($split['category_id'] ?? null) ? (int) $split['category_id'] : null,
+            'amount' => is_numeric($split['amount']) ? (float) $split['amount'] : 0.0,
+            'description' => is_string($split['description'] ?? null) ? $split['description'] : null,
+        ])->values()->all();
     }
 }

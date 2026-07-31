@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Household;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 abstract class Controller
@@ -13,10 +14,25 @@ abstract class Controller
      */
     protected function household(): Household
     {
-        /** @var Household $household */
-        $household = auth()->user()->currentHousehold;
+        $household = $this->currentUser()->currentHousehold;
+
+        abort_unless($household instanceof Household, 403, 'No household selected.');
 
         return $household;
+    }
+
+    /**
+     * The authenticated user, typed. Every caller sits behind the auth
+     * middleware, so a null here is a routing mistake rather than a
+     * reachable state.
+     */
+    protected function currentUser(): User
+    {
+        $user = auth()->user();
+
+        abort_unless($user instanceof User, 403);
+
+        return $user;
     }
 
     protected function abortUnlessOwned(Model $model): void

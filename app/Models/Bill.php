@@ -53,6 +53,10 @@ class Bill extends Model
         $today = Carbon::today();
         $due = Carbon::create($today->year, $today->month, min($this->due_day, 28));
 
+        if (! $due instanceof Carbon) {
+            return $today;
+        }
+
         if ($due->isPast() && ! $due->isToday()) {
             $due = match ($this->frequency) {
                 'weekly' => $due->addWeek(),
@@ -93,7 +97,7 @@ class Bill extends Model
             $cursor = $step($cursor, -1);
         }
 
-        $occurrences = collect();
+        $occurrences = new Collection;
 
         for ($guard = 0; $cursor->lessThanOrEqualTo($to) && $guard < 1000; $guard++) {
             if ($cursor->greaterThanOrEqualTo($from)) {

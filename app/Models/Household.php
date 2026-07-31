@@ -59,7 +59,7 @@ class Household extends Model
         $byParent = $flat->whereNotNull('parent_id')->groupBy('parent_id');
 
         return $topLevel
-            ->flatMap(fn ($category) => collect([$category])->merge($byParent->get($category->id, collect())))
+            ->flatMap(fn (Category $category) => (new Collection([$category]))->merge($byParent->get($category->id, new Collection)))
             ->values();
     }
 

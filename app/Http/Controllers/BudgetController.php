@@ -29,17 +29,23 @@ class BudgetController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'category_id' => ['required', Rule::exists('categories', 'id')->where('household_id', $this->household()->id)],
             'month' => ['required', 'date_format:Y-m'],
             'amount' => ['required', 'numeric', 'min:0'],
         ]);
 
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
         Budget::updateOrCreate(
             [
                 'household_id' => $this->household()->id,
                 'category_id' => $data['category_id'],
-                'month' => $data['month'].'-01',
+                'month' => $request->string('month')->toString().'-01',
             ],
             ['amount' => $data['amount']]
         );

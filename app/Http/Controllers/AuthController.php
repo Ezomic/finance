@@ -26,7 +26,7 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt(['email' => $request->string('email')->toString(), 'password' => $request->string('password')->toString()], $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'Those credentials don\'t match our records.'])->onlyInput('email');
         }
 
@@ -47,16 +47,22 @@ class AuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make($request->string('password')->toString()),
         ]);
 
         Auth::login($user);

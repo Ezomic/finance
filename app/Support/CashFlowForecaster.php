@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Account;
+use App\Models\Bill;
 use App\Models\Household;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -15,25 +17,26 @@ class CashFlowForecaster
 {
     private const TRAILING_DAYS = 90;
 
-    /** @return array{points: Collection<int, array{date: Carbon, balance: float}>, events: Collection<int, array{date: Carbon, label: string, amount: float, type: string}>, discretionary_daily: float, start_balance: float} */
+    /** @return array{points: Collection<int, array{date: Carbon, balance: float}>, events: Collection<int, ForecastEvent>, discretionary_daily: float, start_balance: float} */
     public static function project(Household $household, int $days = 60): array
     {
         $today = Carbon::today();
         $horizonEnd = $today->copy()->addDays($days);
 
-        $startBalance = (float) $household->accounts()->where('is_archived', false)->get()->sum->balance;
+        $startBalance = $household->accounts()->where('is_archived', false)->get()
+            ->sum(fn (Account $a): float => (float) $a->balance);
 
         $bills = $household->bills()->where('is_active', true)->get();
 
         $expenseTransactions = $household->transactions()->where('type', 'expense')->with('account')->orderBy('date')->get();
         $recurringExpenses = RecurringDetector::detect($expenseTransactions)
             ->where('is_stale', false)
-            ->reject(fn (array $sub) => self::matchesABill($sub, $bills));
+            ->reject(fn (array $sub): bool => self::matchesABill($sub, $bills));
 
         $incomeTransactions = $household->transactions()->where('type', 'income')->with('account')->orderBy('date')->get();
         $recurringIncome = RecurringDetector::detect($incomeTransactions)->where('is_stale', false);
 
-        $events = collect()
+        $events = (new Collection)
             ->merge(self::billEvents($bills, $today, $horizonEnd))
             ->merge(self::recurringEvents($recurringExpenses, $today, $horizonEnd, -1))
             ->merge(self::recurringEvents($recurringIncome, $today, $horizonEnd, 1))
@@ -42,12 +45,13 @@ class CashFlowForecaster
 
         $discretionaryDaily = self::discretionaryDailyRate($household, $today, $bills, $recurringExpenses);
 
-        $eventsByDay = $events->groupBy(fn (array $e) => $e['date']->format('Y-m-d'));
+        $eventsByDay = $events->groupBy(fn (array $e): string => $e['date']->format('Y-m-d'));
 
-        $points = collect();
+        $points = new Collection;
         $balance = $startBalance;
         for ($date = $today->copy(); $date->lte($horizonEnd); $date->addDay()) {
-            $balance += $eventsByDay->get($date->format('Y-m-d'), collect())->sum('amount');
+            $balance += $eventsByDay->get($date->format('Y-m-d'), new Collection)
+                ->sum(fn (array $e): float => $e['amount']);
             $balance -= $discretionaryDaily;
             $points->push(['date' => $date->copy(), 'balance' => round($balance, 2)]);
         }
@@ -60,16 +64,23 @@ class CashFlowForecaster
         ];
     }
 
-    /** @param array<string, mixed> $sub */
+    /**
+     * @param  RecurringCandidate  $sub
+     * @param  Collection<int, Bill>  $bills
+     */
     private static function matchesABill(array $sub, Collection $bills): bool
     {
-        return $bills->contains(fn ($bill) => $bill->account_id === $sub['account']->id
+        return $bills->contains(fn (Bill $bill): bool => $bill->account_id === $sub['account']?->id
             && abs((float) $bill->amount - $sub['amount']) < 0.01);
     }
 
+    /**
+     * @param  Collection<int, Bill>  $bills
+     * @return Collection<int, ForecastEvent>
+     */
     private static function billEvents(Collection $bills, Carbon $from, Carbon $to): Collection
     {
-        return $bills->flatMap(fn ($bill) => $bill->occurrencesBetween($from, $to)->map(fn (Carbon $date) => [
+        return $bills->flatMap(fn (Bill $bill) => $bill->occurrencesBetween($from, $to)->map(fn (Carbon $date): array => [
             'date' => $date,
             'label' => $bill->name,
             'amount' => -(float) $bill->amount,
@@ -78,12 +89,13 @@ class CashFlowForecaster
     }
 
     /**
-     * @param  Collection<int, mixed>  $candidates  RecurringDetector::detect() output
+     * @param  Collection<int, RecurringCandidate>  $candidates  RecurringDetector::detect() output
      * @param  int  $sign  1 for income (adds to balance), -1 for expenses (subtracts)
+     * @return Collection<int, ForecastEvent>
      */
     private static function recurringEvents(Collection $candidates, Carbon $from, Carbon $to, int $sign): Collection
     {
-        $events = collect();
+        $events = new Collection;
 
         foreach ($candidates as $candidate) {
             $interval = $candidate['avg_interval_days'] ?: 30;
@@ -109,19 +121,23 @@ class CashFlowForecaster
      * Blended daily spend for everything not already captured as a bill or
      * detected recurring expense, based on the trailing window.
      */
-    /** @param Collection<int, mixed> $recurringExpenses */
+    /**
+     * @param  Collection<int, Bill>  $bills
+     * @param  Collection<int, RecurringCandidate>  $recurringExpenses
+     */
     private static function discretionaryDailyRate(Household $household, Carbon $today, Collection $bills, Collection $recurringExpenses): float
     {
         $trailingStart = $today->copy()->subDays(self::TRAILING_DAYS);
 
-        $trailingExpenseTotal = (float) $household->transactions()
+        $trailingTotal = $household->transactions()
             ->where('type', 'expense')
             ->whereBetween('date', [$trailingStart, $today])
             ->sum('amount');
+        $trailingExpenseTotal = (float) $trailingTotal;
 
-        $attributed = $bills->sum(fn ($bill) => $bill->occurrencesBetween($trailingStart, $today)->count() * (float) $bill->amount);
+        $attributed = $bills->sum(fn (Bill $bill): float => $bill->occurrencesBetween($trailingStart, $today)->count() * (float) $bill->amount);
 
-        $attributed += $recurringExpenses->sum(function (array $sub) {
+        $attributed += $recurringExpenses->sum(function (array $sub): float {
             $occurrences = floor(self::TRAILING_DAYS / ($sub['avg_interval_days'] ?: 30));
 
             return $occurrences * $sub['amount'];

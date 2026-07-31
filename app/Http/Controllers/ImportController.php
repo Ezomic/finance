@@ -78,8 +78,9 @@ class ImportController extends Controller
             );
         }
 
-        $categories = $household->categories()->pluck('id', 'name');
-        $userId = $request->user()->id;
+        $categories = $household->categories()->pluck('id', 'name')
+            ->mapWithKeys(fn (mixed $id, mixed $name): array => [(string) $name => is_numeric($id) ? (int) $id : 0]);
+        $userId = $this->currentUser()->id;
 
         // Pull existing transactions for this account once, instead of
         // running one "exists" query per imported row.
@@ -192,7 +193,7 @@ class ImportController extends Controller
 
             // Columns: Rekeningnummer, Muntsoort, Transactiedatum, Rentedatum,
             //          Beginsaldo, Eindsaldo, Transactiebedrag, Omschrijving
-            $dateRaw = trim((string) $line[2]); // YYYYMMDD — may come in as float like 20260601.0
+            $dateRaw = trim(is_scalar($line[2] ?? null) ? (string) $line[2] : ''); // YYYYMMDD — may come in as float like 20260601.0
             $dateStr = (string) (int) $dateRaw; // strip any decimal part
 
             // Skip rows with a missing/invalid date (e.g. blank or summary rows)
@@ -200,13 +201,11 @@ class ImportController extends Controller
                 continue;
             }
 
-            $amount = (float) str_replace(',', '.', (string) $line[6]);
-            $description = $this->cleanIngDescription((string) ($line[7] ?? ''));
+            $amount = (float) str_replace(',', '.', is_scalar($line[6] ?? null) ? (string) $line[6] : '0');
+            $description = $this->cleanIngDescription(is_scalar($line[7] ?? null) ? (string) $line[7] : '');
 
             $rows[] = [
-                'date' => Carbon::createFromFormat('Ymd', $dateStr)->format(
-                    'Y-m-d',
-                ),
+                'date' => Carbon::createFromFormat('Ymd', $dateStr)?->format('Y-m-d') ?? '',
                 'amount' => $amount,
                 'description' => $description,
             ];

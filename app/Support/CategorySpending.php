@@ -63,10 +63,14 @@ class CategorySpending
 
         /** @var Collection<string, array{total: float, color: string}> */
         return $rows->groupBy('name')
-            ->map(fn (Collection $group) => [
-                'total' => (float) $group->sum('amount'),
-                'color' => (string) $group->first()['color'],
-            ])
+            ->map(function (Collection $group): array {
+                $first = $group->first();
+
+                return [
+                    'total' => (float) $group->sum(fn (mixed $row): float => is_array($row) && is_numeric($row['amount'] ?? null) ? (float) $row['amount'] : 0.0),
+                    'color' => is_array($first) && is_string($first['color'] ?? null) ? $first['color'] : '',
+                ];
+            })
             ->sortByDesc('total');
     }
 }

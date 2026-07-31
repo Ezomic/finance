@@ -15,9 +15,9 @@ trait LogsActivity
 {
     protected static function bootLogsActivity(): void
     {
-        static::created(fn ($model) => $model->recordActivity('created'));
-        static::updated(fn ($model) => $model->recordActivity('updated'));
-        static::deleted(fn ($model) => $model->recordActivity('deleted'));
+        static::created(fn (self $model) => $model->recordActivity('created'));
+        static::updated(fn (self $model) => $model->recordActivity('updated'));
+        static::deleted(fn (self $model) => $model->recordActivity('deleted'));
     }
 
     protected function recordActivity(string $action): void
@@ -36,7 +36,7 @@ trait LogsActivity
         }
 
         ActivityLog::create([
-            'household_id' => $this->household_id,
+            'household_id' => $this->getAttribute('household_id'),
             'user_id' => auth()->id(),
             'subject_type' => static::class,
             'subject_id' => $this->getKey(),

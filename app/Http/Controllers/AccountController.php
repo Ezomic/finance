@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -23,15 +24,21 @@ class AccountController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:checking,savings,credit,cash,investment'],
             'currency' => ['required', 'string', 'size:3'],
             'opening_balance' => ['required', 'numeric'],
         ]);
 
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
         $data['household_id'] = $this->household()->id;
-        $data['user_id'] = $request->user()->id;
+        $data['user_id'] = $this->currentUser()->id;
 
         Account::create($data);
 
@@ -41,7 +48,7 @@ class AccountController extends Controller
     public function show(Account $account): View
     {
         $this->abortUnlessOwned($account);
-        $account->load(['transactions' => fn ($q) => $q->orderByDesc('date')->limit(25), 'transactions.category', 'netWorthSnapshots']);
+        $account->load(['transactions' => fn (Relation $q) => $q->orderByDesc('date')->limit(25), 'transactions.category', 'netWorthSnapshots']);
 
         return view('accounts.show', compact('account'));
     }
@@ -57,13 +64,19 @@ class AccountController extends Controller
     {
         $this->abortUnlessOwned($account);
 
-        $data = $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:checking,savings,credit,cash,investment'],
             'currency' => ['required', 'string', 'size:3'],
             'opening_balance' => ['required', 'numeric'],
             'is_archived' => ['sometimes', 'boolean'],
         ]);
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
         $data['is_archived'] = $request->boolean('is_archived');
 
         $account->update($data);
@@ -83,10 +96,16 @@ class AccountController extends Controller
     {
         $this->abortUnlessOwned($account);
 
-        $data = $request->validate([
+        $validated = $request->validate([
             'date' => ['required', 'date'],
             'balance' => ['required', 'numeric'],
         ]);
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
         $data['household_id'] = $this->household()->id;
 
         $account->netWorthSnapshots()->updateOrCreate(['date' => $data['date']], ['balance' => $data['balance'], 'household_id' => $data['household_id']]);

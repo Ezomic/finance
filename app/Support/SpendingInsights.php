@@ -41,7 +41,7 @@ class SpendingInsights
     private static function categoryTrends(Household $household): Collection
     {
         $thisMonth = Carbon::now()->startOfMonth();
-        $insights = collect();
+        $insights = new Collection;
 
         foreach ($household->categoriesTree('expense') as $category) {
             $current = CategorySpending::forCategory($category->id, $thisMonth);
@@ -88,7 +88,7 @@ class SpendingInsights
             ->get()
             ->groupBy('category_id');
 
-        $insights = collect();
+        $insights = new Collection;
 
         foreach ($thisMonthExpenses as $categoryId => $group) {
             $history = $household->transactions()
@@ -97,7 +97,7 @@ class SpendingInsights
                 ->where('is_split', false)
                 ->whereBetween('date', [$lookbackStart, $thisMonth->copy()->subDay()])
                 ->pluck('amount')
-                ->map(fn ($amount) => (float) $amount);
+                ->map(fn (mixed $amount): float => is_numeric($amount) ? (float) $amount : 0.0);
 
             if ($history->count() < self::OUTLIER_MIN_SAMPLE) {
                 continue;
@@ -109,13 +109,14 @@ class SpendingInsights
             }
 
             foreach ($group as $transaction) {
-                $amount = (float) $transaction->amount;
+                $amount = is_numeric($transaction->amount) ? (float) $transaction->amount : 0.0;
 
                 if ($amount > $historyAverage * self::OUTLIER_MULTIPLIER) {
-                    $label = $transaction->description ?: $transaction->category->name;
+                    $categoryName = $transaction->category->name ?? 'uncategorised';
+                    $label = $transaction->description ?: $categoryName;
                     $insights->push([
                         'type' => 'outlier_transaction',
-                        'message' => 'A '.number_format($amount, 2)." charge for \"{$label}\" is much larger than your typical {$transaction->category->name} purchase (~".number_format($historyAverage, 2).').',
+                        'message' => 'A '.number_format($amount, 2).' charge for "'.$label.'" is much larger than your typical '.$categoryName.' purchase (~'.number_format($historyAverage, 2).').',
                         'magnitude' => $amount - $historyAverage,
                     ]);
                 }
