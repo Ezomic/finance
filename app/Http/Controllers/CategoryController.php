@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Household;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,12 +24,18 @@ class CategoryController extends Controller
     {
         $household = $this->household();
 
-        $data = $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:income,expense'],
             'color' => ['required', 'string', 'max:7'],
             'parent_id' => ['nullable', $this->parentRule($household)],
         ]);
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
 
         if (! empty($data['parent_id'])) {
             /** @var Category $parent */
@@ -48,18 +55,18 @@ class CategoryController extends Controller
         $this->abortUnlessOwned($category);
         $household = $this->household();
 
-        $data = $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:income,expense'],
             'color' => ['required', 'string', 'max:7'],
             'parent_id' => [
                 'nullable',
                 $this->parentRule($household),
-                function ($attribute, $value, $fail) use ($category) {
+                function (string $attribute, mixed $value, callable $fail) use ($category): void {
                     if (! $value) {
                         return;
                     }
-                    if ((int) $value === $category->id) {
+                    if ((is_numeric($value) ? (int) $value : 0) === $category->id) {
                         $fail('A category cannot be its own parent.');
                     }
                     if ($category->children()->exists()) {
@@ -68,6 +75,12 @@ class CategoryController extends Controller
                 },
             ],
         ]);
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
 
         if (! empty($data['parent_id'])) {
             /** @var Category $parent */
@@ -95,7 +108,7 @@ class CategoryController extends Controller
     private function parentRule(Household $household): Exists
     {
         return Rule::exists('categories', 'id')->where(
-            fn ($query) => $query->where('household_id', $household->id)->whereNull('parent_id'),
+            fn (QueryBuilder $query) => $query->where('household_id', $household->id)->whereNull('parent_id'),
         );
     }
 }

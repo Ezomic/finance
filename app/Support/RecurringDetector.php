@@ -2,9 +2,11 @@
 
 namespace App\Support;
 
+use App\Models\Account;
 use App\Models\Transaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use LogicException;
 
 /**
  * Flags recurring monthly charges (subscriptions) from a household's
@@ -22,7 +24,7 @@ class RecurringDetector
 
     /**
      * @param  Collection<int, Transaction>  $transactions  Expense transactions with account/category loaded.
-     * @return Collection<int, mixed>
+     * @return Collection<int, RecurringCandidate>
      */
     public static function detect(Collection $transactions): Collection
     {
@@ -39,10 +41,16 @@ class RecurringDetector
 
                 return $cadence === null ? [] : [$key => ['sorted' => $sorted, 'cadence' => $cadence]];
             })
-            ->map(function (array $data) {
+            ->map(function (array $data): array {
                 $sorted = $data['sorted'];
                 $first = $sorted->first();
                 $last = $sorted->last();
+
+                // The group filter guarantees at least two rows, so these are
+                // never null; the check keeps that invariant explicit.
+                if (! $first instanceof Transaction || ! $last instanceof Transaction) {
+                    throw new LogicException('Recurring group unexpectedly empty.');
+                }
                 $avgGap = (int) round($data['cadence']);
                 /** @var Carbon $lastDate */
                 $lastDate = $last->date;
@@ -86,7 +94,7 @@ class RecurringDetector
      * increase worth renegotiating or canceling.
      *
      * @param  Collection<int, Transaction>  $transactions  Expense transactions with account loaded.
-     * @return Collection<int, mixed>
+     * @return Collection<int, array{label: string, account: Account|null, old_amount: float, new_amount: float, percent_change: float|null, changed_on: Carbon}>
      */
     public static function detectPriceChanges(Collection $transactions): Collection
     {
@@ -95,9 +103,13 @@ class RecurringDetector
             ->filter(fn (Collection $group) => $group->count() >= 2)
             ->map(fn (Collection $group) => $group->sortBy('date')->values())
             ->filter(fn (Collection $sorted) => self::monthlyCadence($sorted) !== null)
-            ->map(function (Collection $sorted) {
+            ->map(function (Collection $sorted): array {
                 $last = $sorted->last();
                 $previous = $sorted->slice(-2, 1)->first();
+
+                if (! $last instanceof Transaction || ! $previous instanceof Transaction) {
+                    throw new LogicException('Price-change group unexpectedly empty.');
+                }
 
                 return [
                     'label' => TransactionNormalizer::label($last->description ?? ''),
@@ -110,7 +122,7 @@ class RecurringDetector
                     'changed_on' => $last->date,
                 ];
             })
-            ->filter(fn (array $change) => $change['new_amount'] > $change['old_amount'])
+            ->filter(fn (array $change): bool => $change['new_amount'] > $change['old_amount'])
             ->sortByDesc('percent_change')
             ->values();
     }
@@ -127,10 +139,15 @@ class RecurringDetector
         $perCycleGaps = [];
 
         for ($i = 1; $i < $sorted->count(); $i++) {
-            /** @var Carbon $dateI */
-            $dateI = $sorted[$i]->date;
-            /** @var Carbon $datePrev */
-            $datePrev = $sorted[$i - 1]->date;
+            $current = $sorted[$i];
+            $previous = $sorted[$i - 1];
+
+            if (! $current instanceof Transaction || ! $previous instanceof Transaction) {
+                continue;
+            }
+
+            $dateI = $current->date;
+            $datePrev = $previous->date;
             $days = $dateI->diffInDays($datePrev, true);
             $cycles = max(1, (int) round($days / self::CYCLE_DAYS));
             $perCycle = $days / $cycles;

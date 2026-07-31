@@ -12,6 +12,9 @@ class SetCurrentHousehold
      * Make sure a logged-in user always has a valid "current household" to work in.
      * If they belong to none, send them to create/join one before anything else.
      */
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();

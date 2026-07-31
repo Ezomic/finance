@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
         });
 
-        View::composer('layouts.app', function ($view): void {
+        View::composer('layouts.app', function (\Illuminate\View\View $view): void {
             $user = Auth::user();
 
             $portal = $user === null

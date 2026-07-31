@@ -6,6 +6,7 @@ use App\Models\Bill;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -25,7 +26,14 @@ class BillController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate($this->rules());
+        $validated = $request->validate($this->rules());
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
         $data['household_id'] = $this->household()->id;
 
         Bill::create($data);
@@ -40,11 +48,11 @@ class BillController extends Controller
 
         $bills = $household->bills()->where('is_active', true)->with(['category', 'account'])->get();
 
-        $occurrencesByDay = collect();
+        $occurrencesByDay = new Collection;
         foreach ($bills as $bill) {
             foreach ($bill->occurrencesInMonth($month) as $date) {
                 $key = $date->format('Y-m-d');
-                $occurrencesByDay->put($key, $occurrencesByDay->get($key, collect())->push([
+                $occurrencesByDay->put($key, $occurrencesByDay->get($key, new Collection)->push([
                     'bill' => $bill,
                     'paid' => $date->isSameDay($bill->nextDueDate()) ? $bill->isPaidThisCycle() : $date->isPast(),
                 ]));
@@ -75,9 +83,16 @@ class BillController extends Controller
     {
         $this->abortUnlessOwned($bill);
 
-        $data = $request->validate($this->rules() + [
+        $validated = $request->validate($this->rules() + [
             'is_active' => ['sometimes', 'boolean'],
         ]);
+
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
         $data['is_active'] = $request->boolean('is_active');
 
         $bill->update($data);

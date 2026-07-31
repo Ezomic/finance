@@ -2,7 +2,32 @@ includes:
     - vendor/larastan/larastan/extension.neon
 
 parameters:
-    level: 7
+    typeAliases:
+        RecurringCandidate: '''
+            array{
+                label: string,
+                account: App\Models\Account|null,
+                category: App\Models\Category|null,
+                amount: float,
+                occurrences: Illuminate\Support\Collection<int, App\Models\Transaction>,
+                count: int,
+                avg_interval_days: int,
+                first_date: Illuminate\Support\Carbon,
+                last_date: Illuminate\Support\Carbon,
+                next_expected_date: Illuminate\Support\Carbon,
+                annual_cost: float,
+                is_stale: bool
+            }
+        '''
+        ForecastEvent: '''
+            array{
+                date: Illuminate\Support\Carbon,
+                label: string,
+                amount: float,
+                type: string
+            }
+        '''
+    level: 10
     paths:
         - app
         - bootstrap/app.php
@@ -15,5 +40,4 @@ parameters:
         minimumNumberOfJobsPerProcess: 1000
     ignoreErrors:
         - identifier: missingType.generics
-        - identifier: argument.templateType
         - message: '#Call to an undefined method.*::forMonth\(\)#'

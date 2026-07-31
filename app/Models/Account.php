@@ -80,22 +80,28 @@ class Account extends Model
         $snapshot = $this->netWorthSnapshots()->where('date', '<=', $end)->first();
 
         if ($this->type === 'investment') {
-            return $snapshot ? (float) $snapshot->balance : (float) $this->opening_balance;
+            return $snapshot ? $this->toFloat($snapshot->balance) : $this->toFloat($this->opening_balance);
         }
 
-        $base = $snapshot ? (float) $snapshot->balance : (float) $this->opening_balance;
+        $base = $snapshot ? $this->toFloat($snapshot->balance) : $this->toFloat($this->opening_balance);
         $since = $snapshot?->date;
 
-        $scoped = fn ($query) => $query
-            ->where('date', '<=', $end)
-            ->when($since, fn ($q) => $q->where('date', '>', $since));
+        $scoped = function (HasMany $query) use ($end, $since): HasMany {
+            $query->where('date', '<=', $end);
 
-        $income = $scoped($this->transactions()->where('type', 'income'))->sum('amount');
-        $expense = $scoped($this->transactions()->where('type', 'expense'))->sum('amount');
-        $transfersOut = $scoped($this->transactions()->where('type', 'transfer'))->sum('amount');
-        $transfersIn = $scoped($this->incomingTransfers()->where('type', 'transfer'))->sum('amount');
+            if ($since !== null) {
+                $query->where('date', '>', $since);
+            }
 
-        return $base + (float) $income - (float) $expense - (float) $transfersOut + (float) $transfersIn;
+            return $query;
+        };
+
+        $income = $this->toFloat($scoped($this->transactions()->where('type', 'income'))->sum('amount'));
+        $expense = $this->toFloat($scoped($this->transactions()->where('type', 'expense'))->sum('amount'));
+        $transfersOut = $this->toFloat($scoped($this->transactions()->where('type', 'transfer'))->sum('amount'));
+        $transfersIn = $this->toFloat($scoped($this->incomingTransfers()->where('type', 'transfer'))->sum('amount'));
+
+        return $base + $income - $expense - $transfersOut + $transfersIn;
     }
 
     public function typeLabel(): string
@@ -112,5 +118,10 @@ class Account extends Model
     public function activityLabel(): string
     {
         return $this->name;
+    }
+
+    private function toFloat(mixed $value): float
+    {
+        return is_numeric($value) ? (float) $value : 0.0;
     }
 }

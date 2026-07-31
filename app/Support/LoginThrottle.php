@@ -16,7 +16,7 @@ class LoginThrottle
 {
     public static function rawKey(Request $request): string
     {
-        return strtolower((string) $request->input('email')).'|'.$request->ip();
+        return strtolower($request->string('email')->toString()).'|'.$request->ip();
     }
 
     public static function cacheKey(Request $request): string

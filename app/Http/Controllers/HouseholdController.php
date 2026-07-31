@@ -16,13 +16,19 @@ class HouseholdController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
         ]);
 
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
         $household = Household::create(['name' => $data['name']]);
-        $household->users()->attach($request->user()->id, ['role' => 'owner']);
-        $request->user()->forceFill(['current_household_id' => $household->id])->save();
+        $household->users()->attach($this->currentUser()->id, ['role' => 'owner']);
+        $this->currentUser()->forceFill(['current_household_id' => $household->id])->save();
 
         // Seed a handful of sensible default categories so the app isn't empty on day one.
         $defaults = [
@@ -42,29 +48,35 @@ class HouseholdController extends Controller
 
     public function join(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validated = $request->validate([
             'invite_code' => ['required', 'string'],
         ]);
 
-        $household = Household::where('invite_code', strtoupper($data['invite_code']))->first();
+        $data = [];
+
+        foreach (is_array($validated) ? $validated : [] as $key => $value) {
+            $data[(string) $key] = $value;
+        }
+
+        $household = Household::where('invite_code', strtoupper($request->string('invite_code')->toString()))->first();
 
         if (! $household) {
             return back()->withErrors(['invite_code' => 'No household matches that invite code.']);
         }
 
-        $household->users()->syncWithoutDetaching([$request->user()->id => ['role' => 'member']]);
-        $request->user()->forceFill(['current_household_id' => $household->id])->save();
+        $household->users()->syncWithoutDetaching([$this->currentUser()->id => ['role' => 'member']]);
+        $this->currentUser()->forceFill(['current_household_id' => $household->id])->save();
 
         return redirect()->route('dashboard')->with('status', "You've joined {$household->name}.");
     }
 
     public function switch(Request $request, Household $household): RedirectResponse
     {
-        if (! $request->user()->households()->where('households.id', $household->id)->exists()) {
+        if (! $this->currentUser()->households()->where('households.id', $household->id)->exists()) {
             abort(403);
         }
 
-        $request->user()->forceFill(['current_household_id' => $household->id])->save();
+        $this->currentUser()->forceFill(['current_household_id' => $household->id])->save();
 
         return redirect()->route('dashboard');
     }
