@@ -1,10 +1,15 @@
 name: CI
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
-    branches: ["**"]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -20,6 +25,13 @@ jobs:
           php-version: "8.4"
           extensions: mbstring, pdo_sqlite, xml, dom
           coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
