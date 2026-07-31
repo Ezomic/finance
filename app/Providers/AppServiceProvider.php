@@ -34,10 +34,14 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.app', function ($view): void {
             $user = Auth::user();
 
-            $view->with(
-                'portalApps',
-                $user === null ? [] : app(IdPortalClient::class)->appsFor($user),
-            );
+            $portal = $user === null
+                ? ['apps' => [], 'categories' => []]
+                : app(IdPortalClient::class)->appsFor($user);
+
+            $view->with([
+                'portalApps' => $portal['apps'],
+                'portalCategories' => $portal['categories'],
+            ]);
         });
     }
 }
