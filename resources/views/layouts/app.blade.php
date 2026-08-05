@@ -58,6 +58,7 @@
                     <div class="text-xs text-ink/50 mb-2 mt-3">Signed in as</div>
                     <div class="text-sm font-medium mb-3">{{ auth()->user()->name }}</div>
                     <a href="{{ route('households.settings') }}" class="text-xs text-moss-700 hover:underline">Household settings</a>
+                    <a href="{{ route('api-tokens.index') }}" class="block mt-1 text-xs text-moss-700 hover:underline">API tokens</a>
                     <form method="POST" action="{{ route('logout') }}" class="mt-3">
                         @csrf
                         <button class="text-xs text-clay hover:underline">Sign out</button>

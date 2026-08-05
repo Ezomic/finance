@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillController;
 use App\Http\Controllers\BudgetController;
@@ -35,6 +36,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/households/join', [HouseholdController::class, 'join'])->name('households.join')->middleware('throttle:household-join');
     Route::post('/households/{household}/switch', [HouseholdController::class, 'switch'])->name('households.switch');
     Route::get('/settings/household', [HouseholdController::class, 'settings'])->name('households.settings');
+
+    Route::get('/settings/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');
+    Route::post('/settings/api-tokens', [ApiTokenController::class, 'store'])->name('api-tokens.store');
+    Route::delete('/settings/api-tokens/{token}', [ApiTokenController::class, 'destroy'])->name('api-tokens.destroy');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
