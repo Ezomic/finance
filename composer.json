@@ -10,12 +10,14 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "php": "^8.3",
         "phpoffice/phpspreadsheet": "^5.8",
-        "thijssensoftware/id-client": "^0.3.0"
+        "thijssensoftware/flare-client": "^0.3.4",
+        "thijssensoftware/id-client": "^0.3.0",
+        "thijssensoftware/snag-client": "^0.1.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -99,6 +101,18 @@
             "name": "id-client",
             "type": "vcs",
             "url": "https://github.com/Ezomic/id-client.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/Ezomic/flare-client.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/Ezomic/snag-client.git"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/Ezomic/request-id.git"
         }
     ]
 }
