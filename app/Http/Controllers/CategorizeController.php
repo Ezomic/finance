@@ -155,12 +155,14 @@ class CategorizeController extends Controller
         $votes = [];
 
         foreach ($history as $t) {
-            if (trim($t->description ?? '') === '') {
+            $categoryId = $t->category_id;
+
+            if ($categoryId === null || trim($t->description ?? '') === '') {
                 continue; // no useful signal to group on
             }
 
             $key = $this->groupKey($t);
-            $votes[$key][$t->category_id] = ($votes[$key][$t->category_id] ?? 0) + 1;
+            $votes[$key][$categoryId] = ($votes[$key][$categoryId] ?? 0) + 1;
         }
 
         return $votes;
