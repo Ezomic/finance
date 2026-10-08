@@ -6,7 +6,6 @@ use App\Models\Bill;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -48,14 +47,13 @@ class BillController extends Controller
 
         $bills = $household->bills()->where('is_active', true)->with(['category', 'account'])->get();
 
-        $occurrencesByDay = new Collection;
+        $occurrencesByDay = [];
         foreach ($bills as $bill) {
             foreach ($bill->occurrencesInMonth($month) as $date) {
-                $key = $date->format('Y-m-d');
-                $occurrencesByDay->put($key, $occurrencesByDay->get($key, new Collection)->push([
+                $occurrencesByDay[$date->format('Y-m-d')][] = [
                     'bill' => $bill,
                     'paid' => $date->isSameDay($bill->nextDueDate()) ? $bill->isPaidThisCycle() : $date->isPast(),
-                ]));
+                ];
             }
         }
 
@@ -65,7 +63,7 @@ class BillController extends Controller
 
         $days = collect();
         for ($date = $start->copy(); $date->lte($end); $date->addDay()) {
-            $days->push(['date' => $date->copy(), 'occurrences' => $occurrencesByDay->get($date->format('Y-m-d'), collect())]);
+            $days->push(['date' => $date->copy(), 'occurrences' => collect($occurrencesByDay[$date->format('Y-m-d')] ?? [])]);
         }
 
         return view('bills.calendar', compact('days', 'month', 'leadingBlanks'));

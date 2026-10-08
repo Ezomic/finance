@@ -40,4 +40,3 @@ parameters:
         minimumNumberOfJobsPerProcess: 1000
     ignoreErrors:
         - identifier: missingType.generics
-        - message: '#Call to an undefined method.*::forMonth\(\)#'
